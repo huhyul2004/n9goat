@@ -11,7 +11,18 @@ export function getSupabase(): SupabaseClient {
       "Supabase not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local"
     );
   }
-  _supabase = createClient(url, key);
+  _supabase = createClient(url, key, {
+    global: {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
   return _supabase;
 }
 

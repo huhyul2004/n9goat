@@ -92,7 +92,7 @@ function BoardContent() {
   async function handleSubmit() {
     if (!user || !newContent.trim()) return;
     setSubmitting(true);
-    const ok = await createPost({
+    const result = await createPost({
       category: writeType,
       title: newTitle.trim() || "(제목 없음)",
       content: newContent.trim(),
@@ -102,11 +102,14 @@ function BoardContent() {
       attachment: newAttachment,
       attachment_name: newAttachmentName,
     });
-    if (ok) {
+    if (result.ok) {
       setNewTitle(""); setNewContent(""); setNewAttachment(undefined); setNewAttachmentName(undefined);
       setShowWrite(false);
       toast.add(writeType === "announcement" ? "공지가 등록되었습니다" : "글이 게시되었습니다", "success");
       loadPosts();
+    } else {
+      console.error("[handleSubmit] 게시 실패:", result.error);
+      toast.add(`게시에 실패했습니다: ${result.error || "알 수 없는 오류"}`, "error");
     }
     setSubmitting(false);
   }

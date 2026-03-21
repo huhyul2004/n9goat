@@ -6,49 +6,70 @@ import type { Post, Comment, Mail, ChatMessage, CalendarEvent, Poll } from "./ty
 export async function fetchPosts(category?: string): Promise<Post[]> {
   let q = supabase.from("posts").select("*").order("created_at", { ascending: false });
   if (category) q = q.eq("category", category);
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) console.error("[fetchPosts]", error.message);
   return (data as Post[]) || [];
 }
 
-export async function createPost(post: Omit<Post, "id" | "created_at">): Promise<boolean> {
-  const { error } = await supabase.from("posts").insert(post);
-  return !error;
+export async function createPost(post: Omit<Post, "id" | "created_at">): Promise<{ ok: boolean; error?: string }> {
+  // undefined 값 제거 (Supabase에 undefined 필드 전송 방지)
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(post)) {
+    if (value !== undefined) {
+      cleaned[key] = value;
+    }
+  }
+
+  console.log("[createPost] 전송 데이터:", Object.keys(cleaned));
+  const { error } = await supabase.from("posts").insert(cleaned);
+  if (error) {
+    console.error("[createPost] 에러:", error.message, error.details, error.hint, error.code);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 export async function togglePinPost(id: string, pinned: boolean): Promise<boolean> {
   const { error } = await supabase.from("posts").update({ pinned }).eq("id", id);
+  if (error) console.error("[togglePinPost]", error.message);
   return !error;
 }
 
 export async function updatePost(id: string, updates: { title?: string; content?: string }): Promise<boolean> {
   const { error } = await supabase.from("posts").update({ ...updates, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) console.error("[updatePost]", error.message);
   return !error;
 }
 
 export async function deletePost(id: string): Promise<boolean> {
   const { error } = await supabase.from("posts").delete().eq("id", id);
+  if (error) console.error("[deletePost]", error.message);
   return !error;
 }
 
 // ===================== COMMENTS =====================
 
 export async function fetchComments(postId: string): Promise<Comment[]> {
-  const { data } = await supabase.from("comments").select("*").eq("post_id", postId).order("created_at", { ascending: true });
+  const { data, error } = await supabase.from("comments").select("*").eq("post_id", postId).order("created_at", { ascending: true });
+  if (error) console.error("[fetchComments]", error.message);
   return (data as Comment[]) || [];
 }
 
 export async function createComment(comment: Omit<Comment, "id" | "created_at">): Promise<boolean> {
   const { error } = await supabase.from("comments").insert(comment);
+  if (error) console.error("[createComment]", error.message);
   return !error;
 }
 
 export async function updateComment(id: string, content: string): Promise<boolean> {
   const { error } = await supabase.from("comments").update({ content, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) console.error("[updateComment]", error.message);
   return !error;
 }
 
 export async function deleteComment(id: string): Promise<boolean> {
   const { error } = await supabase.from("comments").delete().eq("id", id);
+  if (error) console.error("[deleteComment]", error.message);
   return !error;
 }
 
@@ -90,6 +111,7 @@ export async function fetchMails(userId: string, type: "inbox" | "sent"): Promis
 
 export async function createMail(mail: Omit<Mail, "id" | "is_read" | "created_at">): Promise<boolean> {
   const { error } = await supabase.from("mails").insert(mail);
+  if (error) console.error("[createMail]", error.message);
   return !error;
 }
 
@@ -106,6 +128,7 @@ export async function fetchChatMessages(room: string): Promise<ChatMessage[]> {
 
 export async function sendChatMessage(msg: Omit<ChatMessage, "id" | "created_at">): Promise<boolean> {
   const { error } = await supabase.from("chat_messages").insert(msg);
+  if (error) console.error("[sendChatMessage]", error.message);
   return !error;
 }
 
@@ -122,11 +145,13 @@ export async function fetchEvents(month?: string): Promise<CalendarEvent[]> {
 
 export async function createEvent(event: Omit<CalendarEvent, "id" | "created_at">): Promise<boolean> {
   const { error } = await supabase.from("calendar_events").insert(event);
+  if (error) console.error("[createEvent]", error.message);
   return !error;
 }
 
 export async function deleteEvent(id: string): Promise<boolean> {
   const { error } = await supabase.from("calendar_events").delete().eq("id", id);
+  if (error) console.error("[deleteEvent]", error.message);
   return !error;
 }
 
@@ -139,6 +164,7 @@ export async function fetchPolls(): Promise<Poll[]> {
 
 export async function createPoll(poll: Omit<Poll, "id" | "created_at" | "votes">): Promise<boolean> {
   const { error } = await supabase.from("polls").insert({ ...poll, votes: {} });
+  if (error) console.error("[createPoll]", error.message);
   return !error;
 }
 
@@ -147,6 +173,7 @@ export async function votePoll(pollId: string, userId: string, option: string): 
   if (!data) return false;
   const votes = { ...(data.votes || {}), [userId]: option };
   const { error } = await supabase.from("polls").update({ votes }).eq("id", pollId);
+  if (error) console.error("[votePoll]", error.message);
   return !error;
 }
 
