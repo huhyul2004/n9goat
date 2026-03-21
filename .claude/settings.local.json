@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx:*)",
+      "Bash(yes \"\")",
+      "Bash(cp -r /Users/huhchan/n9-community/* /Users/huhchan/n9-community/.* /Users/huhchan/엔나인/)",
+      "Bash(rm -rf /Users/huhchan/n9-community)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
