@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import ToastContainer from "@/components/ToastContainer";
 import Watermark from "@/components/Watermark";
+import Chatbot from "@/components/Chatbot";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -25,6 +26,7 @@ export default function RootLayout({
         {children}
         <Watermark />
         <ToastContainer />
+        <Chatbot />
       </body>
     </html>
   );
