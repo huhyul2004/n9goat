@@ -57,6 +57,7 @@ function BoardContent() {
   const [menuOpenPost, setMenuOpenPost] = useState<string | null>(null);
   const [menuOpenComment, setMenuOpenComment] = useState<string | null>(null);
 
+  const [aiLoading, setAiLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadPosts(); }, []);
@@ -87,6 +88,34 @@ function BoardContent() {
       setNewAttachmentName(file.name);
     };
     reader.readAsDataURL(file);
+  }
+
+  async function handleAiWrite() {
+    const keywords = newContent.trim() || newTitle.trim();
+    if (!keywords) {
+      toast.add("키워드를 먼저 입력해주세요", "error");
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/ai-write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.title) setNewTitle(data.title);
+        if (data.body) setNewContent(data.body);
+        toast.add("AI가 글을 작성했습니다!", "success");
+      } else {
+        toast.add(data.error || "AI 작성에 실패했습니다", "error");
+      }
+    } catch {
+      toast.add("네트워크 오류가 발생했습니다", "error");
+    } finally {
+      setAiLoading(false);
+    }
   }
 
   async function handleSubmit() {
@@ -402,6 +431,9 @@ function BoardContent() {
                     <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.hwp,.xlsx" />
                     <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 px-2 py-1 rounded-lg hover:bg-slate-100 transition">
                       <Paperclip size={14} /> 첨부
+                    </button>
+                    <button onClick={handleAiWrite} disabled={aiLoading} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded-lg hover:bg-indigo-50 transition disabled:opacity-50">
+                      <Sparkles size={14} className={aiLoading ? "animate-spin" : ""} /> {aiLoading ? "AI 작성 중..." : "AI 작성"}
                     </button>
                     {newAttachmentName && <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{newAttachmentName}</span>}
                   </div>
