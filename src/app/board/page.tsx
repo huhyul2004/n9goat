@@ -449,13 +449,6 @@ function BoardContent() {
                 </div>
                 <input type="text" placeholder="제목 (선택)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm mb-3" />
                 <textarea placeholder="키워드를 입력하고 AI 작성 버튼을 눌러보세요..." value={newContent} onChange={(e) => setNewContent(e.target.value)} rows={6} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm resize-y leading-relaxed" />
-                {/* 익명 토글 */}
-                <div className="mt-3">
-                  <button onClick={() => setIsAnonymous(!isAnonymous)} className={`flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isAnonymous ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
-                    <EyeOff size={16} />
-                    {isAnonymous ? "익명으로 게시합니다" : "익명으로 게시하기"}
-                  </button>
-                </div>
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
                     <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.hwp,.xlsx" />
@@ -464,6 +457,9 @@ function BoardContent() {
                     </button>
                     <button onClick={handleAiWrite} disabled={aiLoading} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded-lg hover:bg-indigo-50 transition disabled:opacity-50">
                       <Sparkles size={14} className={aiLoading ? "animate-spin" : ""} /> {aiLoading ? "AI 작성 중..." : "AI 작성"}
+                    </button>
+                    <button onClick={() => setIsAnonymous(!isAnonymous)} className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition ${isAnonymous ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"}`}>
+                      <EyeOff size={14} /> 익명
                     </button>
                     {newAttachmentName && <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{newAttachmentName}</span>}
                   </div>
