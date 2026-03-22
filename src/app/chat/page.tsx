@@ -4,12 +4,12 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/store/useAuth";
-import { fetchChatMessages, sendChatMessage } from "@/lib/db";
+import { fetchChatMessages, sendChatMessage, deleteChatMessage } from "@/lib/db";
 import { SCHOOLS } from "@/lib/constants";
 import type { ChatMessage } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { Send, User, Hash, Paperclip, X, Image as ImageIcon } from "lucide-react";
+import { Send, User, Hash, Paperclip, X, Image as ImageIcon, Trash2 } from "lucide-react";
 
 const ROOMS = ["전체", ...SCHOOLS];
 
@@ -71,6 +71,12 @@ function ChatContent() {
     sendingRef.current = false;
   }
 
+  async function handleDeleteMessage(id: string) {
+    if (!confirm("메시지를 삭제하시겠습니까?")) return;
+    await deleteChatMessage(id);
+    await loadMessages();
+  }
+
   function formatTime(d: string) {
     return new Date(d).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
   }
@@ -115,7 +121,10 @@ function ChatContent() {
                     )}
                     {msg.content}
                   </div>
-                  <p className={`text-[10px] text-slate-400 mt-0.5 px-1 ${isMe ? "text-right" : ""}`}>{formatTime(msg.created_at)}</p>
+                  <div className={`flex items-center gap-1.5 mt-0.5 px-1 ${isMe ? "justify-end" : ""}`}>
+                    <p className="text-[10px] text-slate-400">{formatTime(msg.created_at)}</p>
+                    {isMe && <button onClick={() => handleDeleteMessage(msg.id)} className="text-slate-300 hover:text-red-500 transition"><Trash2 size={11} /></button>}
+                  </div>
                 </div>
               </div>
             );

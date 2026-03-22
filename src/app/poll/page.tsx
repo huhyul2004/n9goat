@@ -5,11 +5,11 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
-import { fetchPolls, createPoll, votePoll } from "@/lib/db";
+import { fetchPolls, createPoll, votePoll, deletePoll } from "@/lib/db";
 import type { Poll } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { BarChart3, Plus, X, Check } from "lucide-react";
+import { BarChart3, Plus, X, Check, Trash2 } from "lucide-react";
 
 function PollContent() {
   const { user } = useAuth();
@@ -47,6 +47,12 @@ function PollContent() {
   async function handleVote(pollId: string, option: string) {
     if (!user) return;
     await votePoll(pollId, user.id, option);
+    load();
+  }
+
+  async function handleDeletePoll(pollId: string) {
+    if (!confirm("이 투표를 삭제하시겠습니까?")) return;
+    await deletePoll(pollId);
     load();
   }
 
@@ -123,6 +129,9 @@ function PollContent() {
                         <h3 className="font-bold text-slate-800">{poll.title}</h3>
                         <p className="text-xs text-slate-400 mt-0.5">{poll.author_school} {poll.author_role} · {timeAgo(poll.created_at)} · {totalVotes}명 참여</p>
                       </div>
+                      {user?.id === poll.author_id && (
+                        <button onClick={() => handleDeletePoll(poll.id)} className="text-slate-300 hover:text-red-500 transition p-1"><Trash2 size={16} /></button>
+                      )}
                     </div>
                     <div className="space-y-2">
                       {poll.options.map((opt) => {

@@ -132,6 +132,12 @@ export async function markMailRead(mailId: string): Promise<void> {
   await supabase.from("mails").update({ is_read: true }).eq("id", mailId);
 }
 
+export async function deleteMail(id: string): Promise<boolean> {
+  const { error } = await supabase.from("mails").delete().eq("id", id);
+  if (error) console.error("[deleteMail]", error.message);
+  return !error;
+}
+
 // ===================== CHAT =====================
 
 export async function fetchChatMessages(room: string): Promise<ChatMessage[]> {
@@ -142,6 +148,12 @@ export async function fetchChatMessages(room: string): Promise<ChatMessage[]> {
 export async function sendChatMessage(msg: Omit<ChatMessage, "id" | "created_at">): Promise<boolean> {
   const { error } = await supabase.from("chat_messages").insert(msg);
   if (error) console.error("[sendChatMessage]", error.message);
+  return !error;
+}
+
+export async function deleteChatMessage(id: string): Promise<boolean> {
+  const { error } = await supabase.from("chat_messages").delete().eq("id", id);
+  if (error) console.error("[deleteChatMessage]", error.message);
   return !error;
 }
 
@@ -178,6 +190,12 @@ export async function fetchPolls(): Promise<Poll[]> {
 export async function createPoll(poll: Omit<Poll, "id" | "created_at" | "votes">): Promise<boolean> {
   const { error } = await supabase.from("polls").insert({ ...poll, votes: {} });
   if (error) console.error("[createPoll]", error.message);
+  return !error;
+}
+
+export async function deletePoll(id: string): Promise<boolean> {
+  const { error } = await supabase.from("polls").delete().eq("id", id);
+  if (error) console.error("[deletePoll]", error.message);
   return !error;
 }
 

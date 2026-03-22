@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { fetchMails as dbFetchMails, markMailRead, createMail } from "@/lib/db";
+import { fetchMails as dbFetchMails, markMailRead, createMail, deleteMail } from "@/lib/db";
 import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
 import type { Mail } from "@/lib/types";
@@ -12,7 +12,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
 import {
   Mail as MailIcon, ChevronRight, Clock, ArrowLeft,
-  Inbox, SendHorizontal, PenSquare, Reply, Paperclip,
+  Inbox, SendHorizontal, PenSquare, Reply, Paperclip, Trash2,
 } from "lucide-react";
 
 function MailContent() {
@@ -67,6 +67,14 @@ function MailContent() {
     reader.readAsDataURL(file);
   }
 
+  async function handleDeleteMail() {
+    if (!selected) return;
+    if (!confirm("이 메일을 삭제하시겠습니까?")) return;
+    await deleteMail(selected.id);
+    setSelected(null);
+    loadMails();
+  }
+
   async function handleSendReply() {
     if (!user || !selected || !replyBody.trim()) return;
     setSending(true);
@@ -109,11 +117,16 @@ function MailContent() {
                     </p>
                     <p className="text-xs text-slate-400">{new Date(selected.created_at).toLocaleString("ko-KR")}</p>
                   </div>
-                  {tab === "inbox" && (
-                    <button onClick={startReply} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-2 rounded-lg transition shrink-0">
-                      <Reply size={14} /> 답장
+                  <div className="flex items-center gap-2 shrink-0">
+                    {tab === "inbox" && (
+                      <button onClick={startReply} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-2 rounded-lg transition">
+                        <Reply size={14} /> 답장
+                      </button>
+                    )}
+                    <button onClick={handleDeleteMail} className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 px-3 py-2 rounded-lg transition">
+                      <Trash2 size={14} /> 삭제
                     </button>
-                  )}
+                  </div>
                 </div>
                 <h2 className="text-base md:text-lg font-bold text-slate-900 mb-3">{selected.subject}</h2>
                 <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap break-words">{selected.body}</p>
