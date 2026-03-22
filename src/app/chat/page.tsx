@@ -41,6 +41,7 @@ function ChatContent() {
   const [showRoomSettings, setShowRoomSettings] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteMembers, setInviteMembers] = useState<string[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
 
   // 현재 단톡방 정보
   const currentGroupRoom = chatRooms.find((r) => `group_${r.id}` === room);
@@ -164,32 +165,33 @@ function ChatContent() {
     return new Date(d).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
   }
 
-  // 멤버 선택 UI 컴포넌트
-  function MemberSelector({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
-    return (
-      <div className="max-h-48 overflow-y-auto space-y-1">
-        {SCHOOLS.map((school) =>
-          ROLES.map((role) => {
-            const id = `${school}_${role}`;
-            if (id === user?.id) return null;
-            if (currentGroupRoom && currentGroupRoom.members.includes(id)) return null;
-            const isSelected = selected.includes(id);
-            return (
-              <button
-                key={id}
-                onClick={() => onToggle(id)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between transition ${
-                  isSelected ? "bg-indigo-100 text-indigo-700" : "hover:bg-slate-50 text-slate-600"
-                }`}
-              >
-                <span>{school.replace("중학교", "중")} {role}</span>
-                {isSelected && <span className="text-indigo-600 font-bold">V</span>}
-              </button>
-            );
-          })
-        )}
-      </div>
-    );
+  // 전체 멤버 목록 생성 (한번만)
+  const allMembers = SCHOOLS.flatMap((school) =>
+    ROLES.map((role) => ({ id: `${school}_${role}`, school, role }))
+  ).filter((m) => m.id !== user?.id);
+
+  function renderMemberList(selected: string[], onToggle: (id: string) => void, excludeIds?: string[]) {
+    const filtered = allMembers.filter((m) => {
+      if (excludeIds?.includes(m.id)) return false;
+      if (!memberSearch.trim()) return true;
+      const q = memberSearch.trim().toLowerCase();
+      return m.school.toLowerCase().includes(q) || m.role.toLowerCase().includes(q);
+    });
+    return filtered.map((m) => {
+      const isSelected = selected.includes(m.id);
+      return (
+        <button
+          key={m.id}
+          onClick={() => onToggle(m.id)}
+          className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between transition ${
+            isSelected ? "bg-indigo-100 text-indigo-700" : "hover:bg-slate-50 text-slate-600"
+          }`}
+        >
+          <span>{m.school.replace("중학교", "중")} {m.role}</span>
+          {isSelected && <span className="text-indigo-600 font-bold">V</span>}
+        </button>
+      );
+    });
   }
 
   return (
@@ -357,7 +359,7 @@ function ChatContent() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold flex items-center gap-2"><Users size={18} className="text-purple-600" /> 단톡방 만들기</h3>
-              <button onClick={() => { setShowCreateRoom(false); setSelectedMembers([]); setNewRoomName(""); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              <button onClick={() => { setShowCreateRoom(false); setSelectedMembers([]); setNewRoomName(""); setMemberSearch(""); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
             <input
               type="text"
@@ -366,9 +368,16 @@ function ChatContent() {
               onChange={(e) => setNewRoomName(e.target.value)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 outline-none focus:ring-2 focus:ring-purple-500"
             />
+            <input
+              type="text"
+              placeholder="소속 또는 직책 검색..."
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-2 outline-none focus:ring-2 focus:ring-purple-500"
+            />
             <p className="text-xs text-slate-500 mb-2">초대할 멤버 선택 ({selectedMembers.length}명 선택됨)</p>
-            <div className="flex-1 overflow-hidden">
-              <MemberSelector selected={selectedMembers} onToggle={(id) => toggleMember(id, selectedMembers, setSelectedMembers)} />
+            <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
+              {renderMemberList(selectedMembers, (id) => toggleMember(id, selectedMembers, setSelectedMembers))}
             </div>
             <div className="flex justify-end mt-4">
               <button
@@ -389,11 +398,18 @@ function ChatContent() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold flex items-center gap-2"><UserPlus size={18} className="text-indigo-600" /> 멤버 초대</h3>
-              <button onClick={() => { setShowInviteModal(false); setInviteMembers([]); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+              <button onClick={() => { setShowInviteModal(false); setInviteMembers([]); setMemberSearch(""); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
             </div>
+            <input
+              type="text"
+              placeholder="소속 또는 직책 검색..."
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
             <p className="text-xs text-slate-500 mb-2">초대할 멤버 선택 ({inviteMembers.length}명 선택됨)</p>
-            <div className="flex-1 overflow-hidden">
-              <MemberSelector selected={inviteMembers} onToggle={(id) => toggleMember(id, inviteMembers, setInviteMembers)} />
+            <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
+              {renderMemberList(inviteMembers, (id) => toggleMember(id, inviteMembers, setInviteMembers), currentGroupRoom?.members)}
             </div>
             <div className="flex justify-end mt-4">
               <button
