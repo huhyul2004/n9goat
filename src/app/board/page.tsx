@@ -550,9 +550,12 @@ function BoardContent() {
           ) : (
             <>
               {/* Announcements pinned */}
-              {announcements.length > 0 && sortMode !== "mine" && (
+              {announcements.length > 0 && (
                 <div className="space-y-3 mb-6">
-                  {announcements.map((a) => renderPost(a, true))}
+                  {(sortMode === "mine" && user
+                    ? announcements.filter((a) => a.author_id === user.id)
+                    : announcements
+                  ).map((a) => renderPost(a, true))}
                 </div>
               )}
 
