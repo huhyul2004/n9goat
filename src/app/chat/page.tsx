@@ -88,16 +88,16 @@ function ChatContent() {
       <Sidebar />
       <main className="flex-1 flex flex-col pb-14 md:pb-0 min-w-0 overflow-hidden">
         {/* Room selector */}
-        <div className="bg-white border-b border-slate-200 flex items-center shrink-0">
+        <div className="bg-white border-b border-slate-200 flex items-center shrink-0 relative">
           <button
             onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: -150, behavior: "smooth" }); }}
-            className="px-1.5 py-2.5 text-slate-400 hover:text-slate-700 shrink-0"
+            className="absolute left-0 z-10 w-8 h-full bg-gradient-to-r from-white via-white/90 to-transparent flex items-center justify-center text-slate-500 hover:text-indigo-600 shrink-0"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
           </button>
           <div
             ref={roomScrollRef}
-            className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5"
+            className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5 px-9"
           >
             {ROOMS.map((r) => (
               <button key={r} onClick={() => setRoom(r)} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === r ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
@@ -107,9 +107,9 @@ function ChatContent() {
           </div>
           <button
             onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: 150, behavior: "smooth" }); }}
-            className="px-1.5 py-2.5 text-slate-400 hover:text-slate-700 shrink-0"
+            className="absolute right-0 z-10 w-8 h-full bg-gradient-to-l from-white via-white/90 to-transparent flex items-center justify-center text-slate-500 hover:text-indigo-600 shrink-0"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
         </div>
 
