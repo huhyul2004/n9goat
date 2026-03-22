@@ -160,13 +160,22 @@ export async function deleteChatMessage(id: string): Promise<boolean> {
 // ===================== CHAT ROOMS (단톡방) =====================
 
 export async function fetchChatRooms(userId: string): Promise<ChatRoom[]> {
-  const { data } = await supabase.from("chat_rooms").select("*").contains("members", [userId]).order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("chat_rooms").select("*").contains("members", JSON.stringify([userId])).order("created_at", { ascending: false });
+  if (error) {
+    // contains 실패 시 전체 가져와서 필터
+    const { data: all } = await supabase.from("chat_rooms").select("*").order("created_at", { ascending: false });
+    return ((all as ChatRoom[]) || []).filter((r) => r.members.includes(userId));
+  }
   return (data as ChatRoom[]) || [];
 }
 
 export async function createChatRoom(room: Omit<ChatRoom, "id" | "created_at">): Promise<boolean> {
-  const { error } = await supabase.from("chat_rooms").insert(room);
-  if (error) console.error("[createChatRoom]", error.message);
+  const payload = { ...room, members: JSON.parse(JSON.stringify(room.members)) };
+  const { error } = await supabase.from("chat_rooms").insert(payload);
+  if (error) {
+    console.error("[createChatRoom]", error.message, error.details, error.hint);
+    alert(`단톡방 생성 실패: ${error.message}`);
+  }
   return !error;
 }
 
