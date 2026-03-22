@@ -24,6 +24,8 @@ function ChatContent() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sendingRef = useRef(false);
+  const roomScrollRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef({ isDown: false, startX: 0, scrollLeft: 0 });
 
   useEffect(() => { loadMessages(); }, [room]);
 
@@ -86,7 +88,25 @@ function ChatContent() {
       <Sidebar />
       <main className="flex-1 flex flex-col pb-14 md:pb-0 min-w-0 overflow-hidden">
         {/* Room selector */}
-        <div className="bg-white border-b border-slate-200 px-3 py-2.5 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-hide">
+        <div
+          ref={roomScrollRef}
+          className="bg-white border-b border-slate-200 px-3 py-2.5 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-hide cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => {
+            const el = roomScrollRef.current;
+            if (!el) return;
+            dragState.current = { isDown: true, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft };
+          }}
+          onMouseLeave={() => { dragState.current.isDown = false; }}
+          onMouseUp={() => { dragState.current.isDown = false; }}
+          onMouseMove={(e) => {
+            if (!dragState.current.isDown) return;
+            e.preventDefault();
+            const el = roomScrollRef.current;
+            if (!el) return;
+            const x = e.pageX - el.offsetLeft;
+            el.scrollLeft = dragState.current.scrollLeft - (x - dragState.current.startX);
+          }}
+        >
           {ROOMS.map((r) => (
             <button key={r} onClick={() => setRoom(r)} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === r ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
               <Hash size={11} /> {r.replace("중학교", "중")}
