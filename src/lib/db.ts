@@ -169,9 +169,13 @@ export async function createPoll(poll: Omit<Poll, "id" | "created_at" | "votes">
 }
 
 export async function votePoll(pollId: string, userId: string, option: string): Promise<boolean> {
+  // 최신 votes를 가져와서 이미 투표했는지 확인
   const { data } = await supabase.from("polls").select("votes").eq("id", pollId).single();
   if (!data) return false;
-  const votes = { ...(data.votes || {}), [userId]: option };
+  const currentVotes = data.votes || {};
+  // 같은 userId로 이미 투표한 경우 무시 (다른 기기에서 중복 투표 방지)
+  if (currentVotes[userId]) return false;
+  const votes = { ...currentVotes, [userId]: option };
   const { error } = await supabase.from("polls").update({ votes }).eq("id", pollId);
   if (error) console.error("[votePoll]", error.message);
   return !error;

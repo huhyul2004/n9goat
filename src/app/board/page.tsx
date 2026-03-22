@@ -59,6 +59,8 @@ function BoardContent() {
   const [menuOpenComment, setMenuOpenComment] = useState<string | null>(null);
 
   const [aiLoading, setAiLoading] = useState(false);
+  const [moderating, setModerating] = useState(false);
+  const [moderationResult, setModerationResult] = useState<{ ok: boolean; reason?: string; suggestion?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadPosts(); }, []);
@@ -121,6 +123,27 @@ function BoardContent() {
 
   async function handleSubmit() {
     if (!user || !newContent.trim()) return;
+
+    // AI 비윤리 검사
+    setModerating(true);
+    setModerationResult(null);
+    try {
+      const modRes = await fetch("/api/ai-moderate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle.trim(), content: newContent.trim() }),
+      });
+      const modData = await modRes.json();
+      if (!modData.ok) {
+        setModerationResult(modData);
+        setModerating(false);
+        return;
+      }
+    } catch {
+      // 검사 실패 시 그냥 통과
+    }
+    setModerating(false);
+
     setSubmitting(true);
     const result = await createPost({
       category: writeType,
@@ -135,7 +158,7 @@ function BoardContent() {
     });
     if (result.ok) {
       setNewTitle(""); setNewContent(""); setNewAttachment(undefined); setNewAttachmentName(undefined);
-      setIsAnonymous(false);
+      setIsAnonymous(false); setModerationResult(null);
       setShowWrite(false);
       toast.add(writeType === "announcement" ? "공지가 등록되었습니다" : "글이 게시되었습니다", "success");
       loadPosts();
@@ -447,8 +470,28 @@ function BoardContent() {
                     <br />예: &quot;체육대회 날짜 변경 안내&quot; → AI가 제목과 본문을 자동 작성
                   </p>
                 </div>
-                <input type="text" placeholder="제목 (선택)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm mb-3" />
-                <textarea placeholder="키워드를 입력하고 AI 작성 버튼을 눌러보세요..." value={newContent} onChange={(e) => setNewContent(e.target.value)} rows={6} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm resize-y leading-relaxed" />
+                <input type="text" placeholder="제목 (선택)" value={newTitle} onChange={(e) => { setNewTitle(e.target.value); setModerationResult(null); }} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm mb-3" />
+                <textarea placeholder="키워드를 입력하고 AI 작성 버튼을 눌러보세요..." value={newContent} onChange={(e) => { setNewContent(e.target.value); setModerationResult(null); }} rows={6} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm resize-y leading-relaxed" />
+                {/* AI 비윤리 검사 결과 */}
+                {moderationResult && !moderationResult.ok && (
+                  <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-4">
+                    <p className="text-sm font-semibold text-red-700 mb-1">AI 검수 결과: 수정이 필요합니다</p>
+                    <p className="text-xs text-red-600 mb-2">{moderationResult.reason}</p>
+                    {moderationResult.suggestion && (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">AI 수정 제안:</p>
+                        <p className="text-xs text-slate-700 bg-white border border-red-100 rounded-lg p-2 whitespace-pre-wrap">{moderationResult.suggestion}</p>
+                        <button
+                          onClick={() => { setNewContent(moderationResult.suggestion!); setModerationResult(null); }}
+                          className="mt-2 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-colors"
+                        >
+                          AI 제안으로 수정하기
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
                     <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.hwp,.xlsx" />
@@ -463,8 +506,8 @@ function BoardContent() {
                     </button>
                     {newAttachmentName && <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{newAttachmentName}</span>}
                   </div>
-                  <button onClick={handleSubmit} disabled={submitting || !newContent.trim()} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-medium transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
-                    {submitting ? "작성 중..." : "게시하기"}
+                  <button onClick={handleSubmit} disabled={submitting || moderating || !newContent.trim()} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-medium transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
+                    {moderating ? "AI 검수 중..." : submitting ? "작성 중..." : "게시하기"}
                   </button>
                 </div>
               </div>

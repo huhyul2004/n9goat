@@ -46,6 +46,14 @@ function PollContent() {
 
   async function handleVote(pollId: string, option: string) {
     if (!user) return;
+    // 투표 전 최신 데이터 확인 (다른 기기에서 이미 투표했을 수 있음)
+    const latestPolls = await fetchPolls();
+    const target = latestPolls.find((p) => p.id === pollId);
+    if (target && target.votes[user.id]) {
+      toast.add("이미 투표하셨습니다", "error");
+      setPolls(latestPolls);
+      return;
+    }
     await votePoll(pollId, user.id, option);
     load();
   }
