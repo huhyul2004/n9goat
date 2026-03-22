@@ -424,8 +424,17 @@ function BoardContent() {
                   </h3>
                   <button onClick={() => setShowWrite(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
                 </div>
+                <div className="mb-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+                  <p className="text-xs text-indigo-700 font-medium flex items-center gap-1.5">
+                    <Sparkles size={13} /> AI 글쓰기 도우미
+                  </p>
+                  <p className="text-xs text-indigo-500 mt-1">
+                    키워드만 입력하고 아래 <span className="font-bold">✨ AI 작성</span> 버튼을 누르면 AI가 글을 완성해줍니다!
+                    <br />예: &quot;체육대회 날짜 변경 안내&quot; → AI가 제목과 본문을 자동 작성
+                  </p>
+                </div>
                 <input type="text" placeholder="제목 (선택)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm mb-3" />
-                <textarea placeholder="내용을 입력하세요..." value={newContent} onChange={(e) => setNewContent(e.target.value)} rows={6} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm resize-y leading-relaxed" />
+                <textarea placeholder="키워드를 입력하고 AI 작성 버튼을 눌러보세요..." value={newContent} onChange={(e) => setNewContent(e.target.value)} rows={6} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm resize-y leading-relaxed" />
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
                     <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.hwp,.xlsx" />
