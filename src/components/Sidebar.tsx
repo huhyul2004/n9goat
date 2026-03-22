@@ -184,7 +184,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around z-50 p-1 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around z-50 p-1 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ paddingBottom: "max(4px, env(safe-area-inset-bottom))" }}>
         {NAV_ITEMS.map((item) => {
           const active = currentMatch === item.match;
           return (

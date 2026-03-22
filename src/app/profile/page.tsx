@@ -85,7 +85,7 @@ function ProfileContent() {
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
+      <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
         <div className="max-w-3xl mx-auto p-3 md:p-8">
           {!isOwnProfile && (
             <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors">

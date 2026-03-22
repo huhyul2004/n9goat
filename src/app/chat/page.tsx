@@ -202,13 +202,13 @@ function ChatContent() {
         <div className="bg-white border-b border-slate-200 flex items-center shrink-0 relative">
           <button
             onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: -150, behavior: "smooth" }); }}
-            className="absolute left-0 z-10 w-8 h-full bg-gradient-to-r from-white via-white/90 to-transparent flex items-center justify-center text-slate-500 hover:text-indigo-600 shrink-0"
+            className="hidden md:flex absolute left-0 z-10 w-8 h-full bg-gradient-to-r from-white via-white/90 to-transparent items-center justify-center text-slate-500 hover:text-indigo-600 shrink-0"
           >
             <ChevronLeft size={20} />
           </button>
           <div
             ref={roomScrollRef}
-            className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5 px-9"
+            className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5 px-3 md:px-9"
           >
             {/* 학교 톡방 */}
             {SCHOOL_ROOMS.map((r) => (
@@ -219,7 +219,7 @@ function ChatContent() {
           </div>
           <button
             onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: 150, behavior: "smooth" }); }}
-            className="absolute right-0 z-10 w-8 h-full bg-gradient-to-l from-white via-white/90 to-transparent flex items-center justify-center text-slate-500 hover:text-indigo-600 shrink-0"
+            className="hidden md:flex absolute right-0 z-10 w-8 h-full bg-gradient-to-l from-white via-white/90 to-transparent items-center justify-center text-slate-500 hover:text-indigo-600 shrink-0"
           >
             <ChevronRight size={20} />
           </button>
@@ -355,8 +355,8 @@ function ChatContent() {
 
       {/* 단톡방 만들기 모달 */}
       {showCreateRoom && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-md p-5 md:p-6 max-h-[85vh] md:max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold flex items-center gap-2"><Users size={18} className="text-purple-600" /> 단톡방 만들기</h3>
               <button onClick={() => { setShowCreateRoom(false); setSelectedMembers([]); setNewRoomName(""); setMemberSearch(""); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
@@ -394,8 +394,8 @@ function ChatContent() {
 
       {/* 초대 모달 */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center md:p-4">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-md p-5 md:p-6 max-h-[85vh] md:max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold flex items-center gap-2"><UserPlus size={18} className="text-indigo-600" /> 멤버 초대</h3>
               <button onClick={() => { setShowInviteModal(false); setInviteMembers([]); setMemberSearch(""); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>

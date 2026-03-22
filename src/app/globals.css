@@ -137,3 +137,21 @@ html.dark nav.fixed {
 .pb-safe {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
 }
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+  /* Prevent overscroll bounce on iOS */
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* Better touch feedback */
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth scrolling */
+  .overflow-x-auto, .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
