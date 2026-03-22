@@ -19,9 +19,12 @@ const SYSTEM_PROMPT = `너는 울산 남구 중학교 커뮤니티 게시판의 
 - 비판적 의견 표현
 - 일반적인 감정 표현 (짜증, 화남 등)
 
+중요: 수정 제안을 할 때는 원본 글의 의미와 구조를 최대한 유지하면서 문제가 되는 부분만 순화해줘.
+원본 글에 없는 내용을 추가하거나 글의 흐름을 바꾸지 마.
+
 응답 형식 (반드시 JSON으로만 응답):
 문제가 없으면: {"ok": true}
-문제가 있으면: {"ok": false, "reason": "문제 이유를 간단히 설명", "suggestion": "수정된 글 내용 제안"}`;
+문제가 있으면: {"ok": false, "reason": "문제 이유를 간단히 설명", "suggested_title": "수정된 제목 (원본 제목에 문제가 없으면 원본 그대로)", "suggested_content": "수정된 본문 (문제가 되는 표현만 순화하고 나머지는 원본 그대로 유지)"}`;
 
 export async function POST(request: NextRequest) {
   try {

@@ -60,7 +60,7 @@ function BoardContent() {
 
   const [aiLoading, setAiLoading] = useState(false);
   const [moderating, setModerating] = useState(false);
-  const [moderationResult, setModerationResult] = useState<{ ok: boolean; reason?: string; suggestion?: string } | null>(null);
+  const [moderationResult, setModerationResult] = useState<{ ok: boolean; reason?: string; suggested_title?: string; suggested_content?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadPosts(); }, []);
@@ -477,15 +477,28 @@ function BoardContent() {
                   <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-4">
                     <p className="text-sm font-semibold text-red-700 mb-1">AI 검수 결과: 수정이 필요합니다</p>
                     <p className="text-xs text-red-600 mb-2">{moderationResult.reason}</p>
-                    {moderationResult.suggestion && (
+                    {moderationResult.suggested_content && (
                       <div>
                         <p className="text-xs text-slate-500 mb-1">AI 수정 제안:</p>
-                        <p className="text-xs text-slate-700 bg-white border border-red-100 rounded-lg p-2 whitespace-pre-wrap">{moderationResult.suggestion}</p>
+                        {moderationResult.suggested_title && moderationResult.suggested_title !== newTitle && (
+                          <div className="mb-1">
+                            <span className="text-[10px] text-slate-400">제목:</span>
+                            <p className="text-xs text-slate-700 bg-white border border-red-100 rounded-lg p-2">{moderationResult.suggested_title}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-[10px] text-slate-400">본문:</span>
+                          <p className="text-xs text-slate-700 bg-white border border-red-100 rounded-lg p-2 whitespace-pre-wrap">{moderationResult.suggested_content}</p>
+                        </div>
                         <button
-                          onClick={() => { setNewContent(moderationResult.suggestion!); setModerationResult(null); }}
+                          onClick={() => {
+                            if (moderationResult.suggested_title) setNewTitle(moderationResult.suggested_title);
+                            if (moderationResult.suggested_content) setNewContent(moderationResult.suggested_content);
+                            setModerationResult(null);
+                          }}
                           className="mt-2 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-colors"
                         >
-                          AI 제안으로 수정하기
+                          제안 반영하기
                         </button>
                       </div>
                     )}
