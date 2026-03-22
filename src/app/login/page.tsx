@@ -99,9 +99,29 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center bg-white p-6">
         <div className="w-full max-w-md">
           {/* Mobile branding */}
-          <div className="lg:hidden text-center mb-10">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">N9</h1>
-            <p className="text-slate-500 mt-1">울산 남구 중학교 커뮤니티</p>
+          <div className="lg:hidden mb-8">
+            <div className="text-center mb-6">
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">N9</h1>
+              <div className="w-10 h-1 bg-indigo-500 mt-3 rounded-full mx-auto" />
+              <p className="text-slate-500 mt-3 text-sm leading-relaxed">
+                울산 남구 중학교 커뮤니티<br />
+                16개 중학교가 하나로 연결됩니다.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex-1 text-center">
+                <p className="text-xl font-black text-indigo-500">16</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">참여 학교</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex-1 text-center">
+                <p className="text-xl font-black text-emerald-500">Q&A</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">질문 게시판</p>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex-1 text-center">
+                <p className="text-xl font-black text-amber-500">Live</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">실시간 채팅</p>
+              </div>
+            </div>
           </div>
 
           <div className="hidden lg:block mb-10">

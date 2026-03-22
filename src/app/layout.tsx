@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ToastContainer from "@/components/ToastContainer";
@@ -13,6 +13,10 @@ const geist = Geist({
 export const metadata: Metadata = {
   title: "n9.com | 울산 남구 중학교 커뮤니티",
   description: "울산광역시 남구 중학교 교직원 커뮤니티",
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Bot, User } from "lucide-react";
 
 interface Message {
@@ -15,6 +15,58 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Drag state
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const dragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, btnX: 0, btnY: 0 });
+  const hasMoved = useRef(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const getDefaultPos = useCallback(() => {
+    const mobile = window.innerWidth < 768;
+    return {
+      x: window.innerWidth - (mobile ? 16 + 48 : 24 + 56),
+      y: window.innerHeight - (mobile ? 72 + 48 : 24 + 56),
+    };
+  }, []);
+
+  useEffect(() => {
+    setPos(getDefaultPos());
+    setIsMobile(window.innerWidth < 768);
+    const onResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (!dragging.current) setPos(getDefaultPos());
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [getDefaultPos]);
+
+  // Pointer-based drag (works for both mouse and touch)
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    dragging.current = true;
+    hasMoved.current = false;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    dragStart.current = { x: e.clientX, y: e.clientY, btnX: rect.left, btnY: rect.top };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved.current = true;
+    const btn = btnRef.current;
+    const size = btn ? btn.offsetWidth : 56;
+    const newX = Math.max(0, Math.min(window.innerWidth - size, dragStart.current.btnX + dx));
+    const newY = Math.max(0, Math.min(window.innerHeight - size, dragStart.current.btnY + dy));
+    setPos({ x: newX, y: newY });
+  }, []);
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,36 +126,50 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
-          isOpen
-            ? "bg-gray-500 hover:bg-gray-600"
-            : "bg-blue-600 hover:bg-blue-700"
-        }`}
-        aria-label={isOpen ? "챗봇 닫기" : "챗봇 열기"}
-      >
-        {isOpen ? (
-          <X className="h-6 w-6 text-white" />
-        ) : (
-          <MessageCircle className="h-6 w-6 text-white" />
-        )}
-      </button>
+      {/* Floating Button - draggable, hidden on mobile when chat is open */}
+      {pos && !(isOpen && isMobile) && (
+        <button
+          ref={btnRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onClick={() => { if (!hasMoved.current) setIsOpen(!isOpen); }}
+          className={`fixed z-[70] flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full shadow-lg select-none touch-none ${
+            isOpen
+              ? "bg-gray-500 hover:bg-gray-600"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          style={{ left: pos.x, top: pos.y }}
+          aria-label={isOpen ? "챗봇 닫기" : "챗봇 열기"}
+        >
+          {isOpen ? (
+            <X className="h-5 w-5 md:h-6 md:w-6 text-white pointer-events-none" />
+          ) : (
+            <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-white pointer-events-none" />
+          )}
+        </button>
+      )}
 
-      {/* Chat Window */}
+      {/* Chat Window - fullscreen on mobile, floating on desktop */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-[500px] w-[380px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+        <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden bg-white dark:bg-gray-900 h-[100dvh] md:inset-auto md:bottom-24 md:right-6 md:h-[500px] md:w-[380px] md:rounded-2xl md:border md:border-gray-200 md:shadow-2xl md:dark:border-gray-700">
           {/* Header */}
-          <div className="bg-blue-600 px-4 py-3 text-white">
+          <div className="bg-blue-600 px-4 py-3 text-white safe-area-top">
             <div className="flex items-center gap-2">
               <Bot className="h-6 w-6" />
-              <div>
+              <div className="flex-1">
                 <h3 className="font-bold">허남구</h3>
                 <p className="text-xs text-blue-100">
                   울산 남구 중학생 AI 도우미
                 </p>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="md:hidden flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 transition-colors"
+                aria-label="챗봇 닫기"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
             </div>
           </div>
 
@@ -173,7 +239,7 @@ export default function Chatbot() {
           </div>
 
           {/* Input */}
-          <div className="border-t border-gray-200 p-3 dark:border-gray-700">
+          <div className="border-t border-gray-200 p-3 pb-safe dark:border-gray-700">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
