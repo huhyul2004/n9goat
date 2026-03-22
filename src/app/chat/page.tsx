@@ -9,7 +9,7 @@ import { SCHOOLS } from "@/lib/constants";
 import type { ChatMessage } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { Send, User, Hash, Paperclip, X, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Send, User, Hash, Paperclip, X, Image as ImageIcon, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
 const ROOMS = ["전체", ...SCHOOLS];
 
@@ -88,30 +88,29 @@ function ChatContent() {
       <Sidebar />
       <main className="flex-1 flex flex-col pb-14 md:pb-0 min-w-0 overflow-hidden">
         {/* Room selector */}
-        <div
-          ref={roomScrollRef}
-          className="bg-white border-b border-slate-200 px-3 py-2.5 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-hide cursor-grab active:cursor-grabbing"
-          onMouseDown={(e) => {
-            const el = roomScrollRef.current;
-            if (!el) return;
-            dragState.current = { isDown: true, startX: e.pageX - el.offsetLeft, scrollLeft: el.scrollLeft };
-          }}
-          onMouseLeave={() => { dragState.current.isDown = false; }}
-          onMouseUp={() => { dragState.current.isDown = false; }}
-          onMouseMove={(e) => {
-            if (!dragState.current.isDown) return;
-            e.preventDefault();
-            const el = roomScrollRef.current;
-            if (!el) return;
-            const x = e.pageX - el.offsetLeft;
-            el.scrollLeft = dragState.current.scrollLeft - (x - dragState.current.startX);
-          }}
-        >
-          {ROOMS.map((r) => (
-            <button key={r} onClick={() => setRoom(r)} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === r ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
-              <Hash size={11} /> {r.replace("중학교", "중")}
-            </button>
+        <div className="bg-white border-b border-slate-200 flex items-center shrink-0">
+          <button
+            onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: -150, behavior: "smooth" }); }}
+            className="px-1.5 py-2.5 text-slate-400 hover:text-slate-700 shrink-0"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div
+            ref={roomScrollRef}
+            className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5"
+          >
+            {ROOMS.map((r) => (
+              <button key={r} onClick={() => setRoom(r)} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === r ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                <Hash size={11} /> {r.replace("중학교", "중")}
+              </button>
           ))}
+          </div>
+          <button
+            onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: 150, behavior: "smooth" }); }}
+            className="px-1.5 py-2.5 text-slate-400 hover:text-slate-700 shrink-0"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
 
         {/* Messages */}
