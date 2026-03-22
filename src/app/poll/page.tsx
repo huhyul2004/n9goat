@@ -46,14 +46,6 @@ function PollContent() {
 
   async function handleVote(pollId: string, option: string) {
     if (!user) return;
-    // 투표 전 최신 데이터 확인 (다른 기기에서 이미 투표했을 수 있음)
-    const latestPolls = await fetchPolls();
-    const target = latestPolls.find((p) => p.id === pollId);
-    if (target && target.votes[user.id]) {
-      toast.add("이미 투표하셨습니다", "error");
-      setPolls(latestPolls);
-      return;
-    }
     await votePoll(pollId, user.id, option);
     load();
   }
@@ -140,10 +132,9 @@ function PollContent() {
                         return (
                           <button
                             key={opt}
-                            onClick={() => !hasVoted && handleVote(poll.id, opt)}
-                            disabled={hasVoted}
+                            onClick={() => handleVote(poll.id, opt)}
                             className={`w-full relative overflow-hidden rounded-xl border transition text-left ${
-                              isMyVote ? "border-indigo-400 bg-indigo-50" : hasVoted ? "border-slate-200 bg-slate-50" : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50"
+                              isMyVote ? "border-indigo-400 bg-indigo-50" : hasVoted ? "border-slate-200 bg-slate-50 hover:border-indigo-300" : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50"
                             }`}
                           >
                             {hasVoted && (
