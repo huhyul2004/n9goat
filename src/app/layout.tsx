@@ -11,12 +11,22 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "n9.com | 울산 남구 중학교 커뮤니티",
-  description: "울산광역시 남구 중학교 교직원 커뮤니티",
+  title: "N9 | 울산 남구 중학교 커뮤니티",
+  description: "울산 남구 16개 중학교 소통 플랫폼",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "N9",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
   viewportFit: "cover",
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -26,6 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className={`${geist.variable} h-full antialiased`}>
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body className="h-full font-sans">
         {children}
         <Watermark />

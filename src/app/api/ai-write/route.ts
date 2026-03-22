@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const SOLAR_API_KEY = process.env.SOLAR_API_KEY;
 const SOLAR_API_URL = "https://api.upstage.ai/v1/chat/completions";
 
-const SYSTEM_PROMPT = `너는 울산 남구 중학교 커뮤니티 게시판의 글쓰기 도우미야.
+const QUESTION_PROMPT = `너는 울산 남구 중학교 커뮤니티 게시판의 글쓰기 도우미야.
 사용자가 키워드나 간단한 문장을 입력하면, 그것을 바탕으로 게시판에 올릴 수 있는 완성된 글을 작성해줘.
 
 규칙:
@@ -14,9 +14,25 @@ const SYSTEM_PROMPT = `너는 울산 남구 중학교 커뮤니티 게시판의 
 - 너무 길지 않게 핵심적으로 작성해줘
 - 제목 앞에 "제목:" 같은 접두사는 붙이지 마`;
 
+const ANNOUNCEMENT_PROMPT = `너는 울산 남구 중학교 커뮤니티의 공식 공지문 작성 도우미야.
+사용자가 키워드나 간단한 설명을 입력하면, 격식 있고 깔끔한 공지문을 작성해줘.
+
+규칙:
+- 첫 줄에 공지 제목을 쓰고, 빈 줄 하나를 두고 본문을 작성해줘
+- 공지문답게 격식체를 사용해줘
+- 본문은 다음 구조로 작성해줘:
+  1. 인사말 (한 줄)
+  2. 핵심 안내 내용
+  3. 세부 사항 (일시, 장소, 대상, 준비물 등 해당되는 항목)
+  4. 마무리 (협조/참여 요청)
+- 중요한 정보는 【】로 강조해줘
+- 제목 앞에 "제목:" 같은 접두사는 붙이지 마
+- 너무 길지 않게 핵심적으로 작성해줘`;
+
 export async function POST(request: NextRequest) {
   try {
-    const { keywords } = await request.json();
+    const { keywords, type } = await request.json();
+    const systemPrompt = type === "announcement" ? ANNOUNCEMENT_PROMPT : QUESTION_PROMPT;
 
     if (!SOLAR_API_KEY) {
       return NextResponse.json(
@@ -41,10 +57,12 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: "solar-pro",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           {
             role: "user",
-            content: `다음 키워드를 바탕으로 게시판 글을 작성해줘: ${keywords}`,
+            content: type === "announcement"
+              ? `다음 내용을 바탕으로 공식 공지문을 작성해줘: ${keywords}`
+              : `다음 키워드를 바탕으로 게시판 글을 작성해줘: ${keywords}`,
           },
         ],
         max_tokens: 1024,

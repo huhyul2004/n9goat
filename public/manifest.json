@@ -1,0 +1,24 @@
+{
+  "name": "N9 - 울산 남구 중학교 커뮤니티",
+  "short_name": "N9",
+  "description": "울산 남구 16개 중학교 소통 플랫폼",
+  "start_url": "/board",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

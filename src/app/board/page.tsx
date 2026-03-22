@@ -104,7 +104,7 @@ function BoardContent() {
       const res = await fetch("/api/ai-write", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keywords }),
+        body: JSON.stringify({ keywords, type: writeType }),
       });
       const data = await res.json();
       if (res.ok) {
