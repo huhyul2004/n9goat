@@ -12,10 +12,10 @@ export async function fetchPosts(category?: string): Promise<Post[]> {
 }
 
 export async function createPost(post: Omit<Post, "id" | "created_at">): Promise<{ ok: boolean; error?: string }> {
-  // undefined 값 제거 (Supabase에 undefined 필드 전송 방지)
+  // undefined 및 false인 boolean 값 제거 (Supabase에 컬럼이 없을 수 있음)
   const cleaned: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(post)) {
-    if (value !== undefined) {
+    if (value !== undefined && value !== false) {
       cleaned[key] = value;
     }
   }
@@ -23,6 +23,16 @@ export async function createPost(post: Omit<Post, "id" | "created_at">): Promise
   console.log("[createPost] 전송 데이터:", Object.keys(cleaned));
   const { error } = await supabase.from("posts").insert(cleaned);
   if (error) {
+    // is_anonymous 컬럼이 DB에 없는 경우, 해당 필드 제거 후 재시도
+    if (error.message.includes("is_anonymous")) {
+      delete cleaned.is_anonymous;
+      const { error: retryError } = await supabase.from("posts").insert(cleaned);
+      if (retryError) {
+        console.error("[createPost] 재시도 에러:", retryError.message);
+        return { ok: false, error: retryError.message };
+      }
+      return { ok: true };
+    }
     console.error("[createPost] 에러:", error.message, error.details, error.hint, error.code);
     return { ok: false, error: error.message };
   }
