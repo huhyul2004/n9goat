@@ -52,9 +52,17 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   login: async (name: string, school: School, role: Role) => {
+    // 이름+소속+직책 조합으로 고정 ID 생성 (다른 기기에서도 동일 ID)
+    const raw = `${name}-${school}-${role}`;
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+    }
+    const stableId = `user-${Math.abs(hash).toString(36)}`;
+
     const isAdmin = ["교육감", "교장", "교감"].includes(role);
     const user: Profile = {
-      id: `user-${Date.now()}`,
+      id: stableId,
       email: "",
       name,
       phone: "",
@@ -71,9 +79,16 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   signup: async ({ name, school, role }) => {
+    const raw = `${name}-${school}-${role}`;
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+    }
+    const stableId = `user-${Math.abs(hash).toString(36)}`;
+
     const isAdmin = ["교육감", "교장", "교감"].includes(role);
     const user: Profile = {
-      id: `user-${Date.now()}`,
+      id: stableId,
       email: "",
       name,
       phone: "",

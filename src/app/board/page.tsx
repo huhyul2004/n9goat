@@ -236,8 +236,9 @@ function BoardContent() {
     const isExpanded = expandedId === post.id;
     const count = commentCounts[post.id] || 0;
     const isOwner = user?.id === post.author_id;
-    const canDelete = isOwner || (user && DELETE_ROLES.includes(user.role));
-    const canEdit = isOwner;
+    const isSuper = user && DELETE_ROLES.includes(user.role);
+    const canDelete = isOwner || isSuper;
+    const canEdit = isOwner || isSuper;
     const showMenu = canDelete || canEdit;
 
     return (
