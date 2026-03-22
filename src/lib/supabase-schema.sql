@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS posts (
   author_id TEXT NOT NULL,
   attachment TEXT,
   attachment_name TEXT,
+  is_anonymous BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ
 );

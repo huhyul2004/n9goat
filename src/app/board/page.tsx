@@ -16,7 +16,7 @@ import Sidebar from "@/components/Sidebar";
 import ProfileTooltip from "@/components/ProfileTooltip";
 import {
   Search, PenSquare, X, MessageCircle, Send, ChevronDown, ChevronUp,
-  User, MoreVertical, Pencil, Trash2, Megaphone, Paperclip, Sparkles, Pin,
+  User, MoreVertical, Pencil, Trash2, Megaphone, Paperclip, Sparkles, Pin, EyeOff,
 } from "lucide-react";
 
 type SortMode = "latest" | "most_comments" | "mine";
@@ -39,6 +39,7 @@ function BoardContent() {
   const [newContent, setNewContent] = useState("");
   const [newAttachment, setNewAttachment] = useState<string | undefined>();
   const [newAttachmentName, setNewAttachmentName] = useState<string | undefined>();
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Edit post
@@ -130,9 +131,11 @@ function BoardContent() {
       author_id: user.id,
       attachment: newAttachment,
       attachment_name: newAttachmentName,
+      is_anonymous: isAnonymous,
     });
     if (result.ok) {
       setNewTitle(""); setNewContent(""); setNewAttachment(undefined); setNewAttachmentName(undefined);
+      setIsAnonymous(false);
       setShowWrite(false);
       toast.add(writeType === "announcement" ? "공지가 등록되었습니다" : "글이 게시되었습니다", "success");
       loadPosts();
@@ -245,7 +248,13 @@ function BoardContent() {
       <div key={post.id} className={`bg-white rounded-2xl overflow-hidden transition-all hover:shadow-md ${isAnnouncement ? "border-2 border-amber-300/60 shadow-amber-100/50" : "border border-slate-100 shadow-sm"}`}>
         <div className="p-5">
           <div className="flex items-start gap-4">
-            <ProfileTooltip authorSchool={post.author_school} authorRole={post.author_role} authorId={post.author_id} />
+            {post.is_anonymous ? (
+              <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold flex-shrink-0">
+                <EyeOff size={22} />
+              </div>
+            ) : (
+              <ProfileTooltip authorSchool={post.author_school} authorRole={post.author_role} authorId={post.author_id} />
+            )}
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-2 min-w-0">
@@ -260,7 +269,11 @@ function BoardContent() {
                     </span>
                   )}
                   <h3 className="font-bold text-slate-800 truncate">
-                    {post.author_school} <span className="text-indigo-600">{post.author_role}</span>
+                    {post.is_anonymous ? (
+                      <span className="text-slate-500">익명</span>
+                    ) : (
+                      <>{post.author_school} <span className="text-indigo-600">{post.author_role}</span></>
+                    )}
                   </h3>
                 </div>
                 <div className="flex items-center gap-1 shrink-0 ml-2">
@@ -436,6 +449,13 @@ function BoardContent() {
                 </div>
                 <input type="text" placeholder="제목 (선택)" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm mb-3" />
                 <textarea placeholder="키워드를 입력하고 AI 작성 버튼을 눌러보세요..." value={newContent} onChange={(e) => setNewContent(e.target.value)} rows={6} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm resize-y leading-relaxed" />
+                {/* 익명 토글 */}
+                <div className="mt-3">
+                  <button onClick={() => setIsAnonymous(!isAnonymous)} className={`flex items-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${isAnonymous ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                    <EyeOff size={16} />
+                    {isAnonymous ? "익명으로 게시합니다" : "익명으로 게시하기"}
+                  </button>
+                </div>
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
                     <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.doc,.docx,.hwp,.xlsx" />

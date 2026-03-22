@@ -8,6 +8,7 @@ export interface Post {
   author_id: string;
   attachment?: string; // base64 data URL or Supabase storage URL
   attachment_name?: string;
+  is_anonymous?: boolean;
   pinned?: boolean;
   created_at: string;
   updated_at?: string;
