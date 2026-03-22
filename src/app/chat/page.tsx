@@ -23,6 +23,7 @@ function ChatContent() {
   const [attachmentName, setAttachmentName] = useState<string | undefined>();
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sendingRef = useRef(false);
 
   useEffect(() => { loadMessages(); }, [room]);
 
@@ -50,7 +51,8 @@ function ChatContent() {
   }
 
   async function handleSend() {
-    if (!user || (!input.trim() && !attachment)) return;
+    if (!user || (!input.trim() && !attachment) || sendingRef.current) return;
+    sendingRef.current = true;
     setSending(true);
     await sendChatMessage({
       room,
@@ -66,6 +68,7 @@ function ChatContent() {
     setAttachmentName(undefined);
     await loadMessages();
     setSending(false);
+    sendingRef.current = false;
   }
 
   function formatTime(d: string) {
