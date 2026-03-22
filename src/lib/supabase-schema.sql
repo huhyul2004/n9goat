@@ -54,6 +54,18 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON activity_logs (action);
 CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs (created_at DESC);
 
 -- ============================================================
+-- 0-D. 계정 비밀번호 (credentials)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS credentials (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  account_id TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_credentials_account_id ON credentials (account_id);
+
+-- ============================================================
 -- 1. 게시글 (posts)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS posts (

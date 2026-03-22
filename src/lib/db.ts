@@ -286,3 +286,16 @@ export async function fetchProfileById(userId: string) {
   const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
   return data;
 }
+
+// ===================== CREDENTIALS (계정 비밀번호) =====================
+
+export async function getCredential(accountId: string): Promise<{ password: string } | null> {
+  const { data } = await supabase.from("credentials").select("password").eq("account_id", accountId).single();
+  return data as { password: string } | null;
+}
+
+export async function createCredential(accountId: string, password: string): Promise<boolean> {
+  const { error } = await supabase.from("credentials").insert({ account_id: accountId, password });
+  if (error) console.error("[createCredential]", error.message);
+  return !error;
+}
