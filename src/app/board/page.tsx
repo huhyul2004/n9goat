@@ -550,7 +550,7 @@ function BoardContent() {
           ) : (
             <>
               {/* Announcements pinned */}
-              {announcements.length > 0 && (
+              {announcements.length > 0 && sortMode !== "mine" && (
                 <div className="space-y-3 mb-6">
                   {announcements.map((a) => renderPost(a, true))}
                 </div>
