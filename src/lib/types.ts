@@ -53,6 +53,14 @@ export interface ChatMessage {
   created_at: string;
 }
 
+export interface ChatRoom {
+  id: string;
+  name: string;
+  owner_id: string;
+  members: string[]; // array of user IDs (소속_직책)
+  created_at: string;
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;

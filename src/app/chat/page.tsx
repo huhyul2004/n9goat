@@ -4,14 +4,21 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/store/useAuth";
-import { fetchChatMessages, sendChatMessage, deleteChatMessage } from "@/lib/db";
-import { SCHOOLS } from "@/lib/constants";
-import type { ChatMessage } from "@/lib/types";
+import {
+  fetchChatMessages, sendChatMessage, deleteChatMessage,
+  fetchChatRooms, createChatRoom, updateChatRoomMembers, deleteChatRoom,
+} from "@/lib/db";
+import { SCHOOLS, ROLES } from "@/lib/constants";
+import type { School, Role } from "@/lib/constants";
+import type { ChatMessage, ChatRoom } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { Send, User, Hash, Paperclip, X, Image as ImageIcon, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Send, User, Hash, Paperclip, X, Trash2,
+  ChevronLeft, ChevronRight, Plus, Users, LogOut, UserPlus, UserMinus, Settings,
+} from "lucide-react";
 
-const ROOMS = ["전체", ...SCHOOLS];
+const SCHOOL_ROOMS = ["전체", ...SCHOOLS];
 
 function ChatContent() {
   const { user } = useAuth();
@@ -25,18 +32,37 @@ function ChatContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sendingRef = useRef(false);
   const roomScrollRef = useRef<HTMLDivElement>(null);
-  const dragState = useRef({ isDown: false, startX: 0, scrollLeft: 0 });
+
+  // 단톡방 상태
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [showCreateRoom, setShowCreateRoom] = useState(false);
+  const [newRoomName, setNewRoomName] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [showRoomSettings, setShowRoomSettings] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteMembers, setInviteMembers] = useState<string[]>([]);
+
+  // 현재 단톡방 정보
+  const currentGroupRoom = chatRooms.find((r) => `group_${r.id}` === room);
+  const isGroupRoom = room.startsWith("group_");
+  const isRoomOwner = currentGroupRoom?.owner_id === user?.id;
 
   useEffect(() => { loadMessages(); }, [room]);
+  useEffect(() => { if (user) loadRooms(); }, [user]);
 
   useEffect(() => {
-    const interval = setInterval(loadMessages, 3000);
+    const interval = setInterval(() => { loadMessages(); if (user) loadRooms(); }, 3000);
     return () => clearInterval(interval);
-  }, [room]);
+  }, [room, user]);
 
   async function loadMessages() {
     const data = await fetchChatMessages(room);
     setMessages(data);
+  }
+
+  async function loadRooms() {
+    if (!user) return;
+    setChatRooms(await fetchChatRooms(user.id));
   }
 
   useEffect(() => {
@@ -79,8 +105,91 @@ function ChatContent() {
     await loadMessages();
   }
 
+  // 단톡방 만들기
+  async function handleCreateRoom() {
+    if (!user || !newRoomName.trim() || selectedMembers.length === 0) return;
+    const members = [user.id, ...selectedMembers];
+    await createChatRoom({ name: newRoomName.trim(), owner_id: user.id, members });
+    setNewRoomName("");
+    setSelectedMembers([]);
+    setShowCreateRoom(false);
+    await loadRooms();
+  }
+
+  // 멤버 선택 토글
+  function toggleMember(memberId: string, list: string[], setList: (v: string[]) => void) {
+    if (list.includes(memberId)) {
+      setList(list.filter((m) => m !== memberId));
+    } else {
+      setList([...list, memberId]);
+    }
+  }
+
+  // 멤버 내보내기 (방장만)
+  async function handleKickMember(memberId: string) {
+    if (!currentGroupRoom || !isRoomOwner) return;
+    if (!confirm("이 멤버를 내보내시겠습니까?")) return;
+    const newMembers = currentGroupRoom.members.filter((m) => m !== memberId);
+    await updateChatRoomMembers(currentGroupRoom.id, newMembers);
+    await loadRooms();
+  }
+
+  // 나가기
+  async function handleLeaveRoom() {
+    if (!currentGroupRoom || !user) return;
+    if (!confirm("정말 이 단톡방을 나가시겠습니까? 나가면 대화 내용을 볼 수 없습니다.")) return;
+    if (isRoomOwner) {
+      if (!confirm("방장이 나가면 단톡방이 삭제됩니다. 계속하시겠습니까?")) return;
+      await deleteChatRoom(currentGroupRoom.id);
+    } else {
+      const newMembers = currentGroupRoom.members.filter((m) => m !== user.id);
+      await updateChatRoomMembers(currentGroupRoom.id, newMembers);
+    }
+    setRoom("전체");
+    setShowRoomSettings(false);
+    await loadRooms();
+  }
+
+  // 초대하기
+  async function handleInviteMembers() {
+    if (!currentGroupRoom || inviteMembers.length === 0) return;
+    const newMembers = [...new Set([...currentGroupRoom.members, ...inviteMembers])];
+    await updateChatRoomMembers(currentGroupRoom.id, newMembers);
+    setInviteMembers([]);
+    setShowInviteModal(false);
+    await loadRooms();
+  }
+
   function formatTime(d: string) {
     return new Date(d).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  // 멤버 선택 UI 컴포넌트
+  function MemberSelector({ selected, onToggle }: { selected: string[]; onToggle: (id: string) => void }) {
+    return (
+      <div className="max-h-48 overflow-y-auto space-y-1">
+        {SCHOOLS.map((school) =>
+          ROLES.map((role) => {
+            const id = `${school}_${role}`;
+            if (id === user?.id) return null;
+            if (currentGroupRoom && currentGroupRoom.members.includes(id)) return null;
+            const isSelected = selected.includes(id);
+            return (
+              <button
+                key={id}
+                onClick={() => onToggle(id)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between transition ${
+                  isSelected ? "bg-indigo-100 text-indigo-700" : "hover:bg-slate-50 text-slate-600"
+                }`}
+              >
+                <span>{school.replace("중학교", "중")} {role}</span>
+                {isSelected && <span className="text-indigo-600 font-bold">V</span>}
+              </button>
+            );
+          })
+        )}
+      </div>
+    );
   }
 
   return (
@@ -99,11 +208,24 @@ function ChatContent() {
             ref={roomScrollRef}
             className="flex-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5 px-9"
           >
-            {ROOMS.map((r) => (
-              <button key={r} onClick={() => setRoom(r)} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === r ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+            {/* 학교 톡방 */}
+            {SCHOOL_ROOMS.map((r) => (
+              <button key={r} onClick={() => { setRoom(r); setShowRoomSettings(false); }} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === r ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
                 <Hash size={11} /> {r.replace("중학교", "중")}
               </button>
-          ))}
+            ))}
+            {/* 구분선 */}
+            {chatRooms.length > 0 && <div className="w-px bg-slate-300 mx-1 self-stretch shrink-0" />}
+            {/* 단톡방 */}
+            {chatRooms.map((gr) => (
+              <button key={gr.id} onClick={() => { setRoom(`group_${gr.id}`); setShowRoomSettings(false); }} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === `group_${gr.id}` ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100"}`}>
+                <Users size={11} /> {gr.name}
+              </button>
+            ))}
+            {/* 단톡방 만들기 버튼 */}
+            <button onClick={() => setShowCreateRoom(true)} className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap bg-slate-50 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition border border-dashed border-slate-300">
+              <Plus size={11} /> 단톡방
+            </button>
           </div>
           <button
             onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: 150, behavior: "smooth" }); }}
@@ -112,6 +234,55 @@ function ChatContent() {
             <ChevronRight size={20} />
           </button>
         </div>
+
+        {/* 단톡방 헤더 (설정 버튼) */}
+        {isGroupRoom && currentGroupRoom && (
+          <div className="bg-purple-50 border-b border-purple-100 px-4 py-2 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <Users size={14} className="text-purple-600" />
+              <span className="text-sm font-medium text-purple-800">{currentGroupRoom.name}</span>
+              <span className="text-xs text-purple-400">{currentGroupRoom.members.length}명</span>
+            </div>
+            <button onClick={() => setShowRoomSettings(!showRoomSettings)} className="text-purple-500 hover:text-purple-700 transition p-1">
+              <Settings size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* 단톡방 설정 패널 */}
+        {showRoomSettings && currentGroupRoom && (
+          <div className="bg-white border-b border-slate-200 p-4 space-y-3 shrink-0 max-h-64 overflow-y-auto">
+            <h4 className="text-sm font-bold text-slate-700">멤버 목록</h4>
+            <div className="space-y-1">
+              {currentGroupRoom.members.map((memberId) => {
+                const [school, role] = memberId.split("_");
+                const isOwner = memberId === currentGroupRoom.owner_id;
+                const isMyself = memberId === user?.id;
+                return (
+                  <div key={memberId} className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-lg text-sm">
+                    <span className="text-slate-700">
+                      {(school || "").replace("중학교", "중")} <span className="text-indigo-600">{role}</span>
+                      {isOwner && <span className="ml-1.5 text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">방장</span>}
+                    </span>
+                    {isRoomOwner && !isMyself && (
+                      <button onClick={() => handleKickMember(memberId)} className="text-slate-400 hover:text-red-500 transition" title="내보내기">
+                        <UserMinus size={14} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowInviteModal(true)} className="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-2 rounded-lg transition">
+                <UserPlus size={13} /> 초대하기
+              </button>
+              <button onClick={handleLeaveRoom} className="flex items-center gap-1 text-xs bg-red-50 text-red-500 hover:bg-red-100 px-3 py-2 rounded-lg transition ml-auto">
+                <LogOut size={13} /> 나가기
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-4 md:px-4 space-y-3">
@@ -178,6 +349,63 @@ function ChatContent() {
           </div>
         </div>
       </main>
+
+      {/* 단톡방 만들기 모달 */}
+      {showCreateRoom && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2"><Users size={18} className="text-purple-600" /> 단톡방 만들기</h3>
+              <button onClick={() => { setShowCreateRoom(false); setSelectedMembers([]); setNewRoomName(""); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <input
+              type="text"
+              placeholder="단톡방 이름"
+              value={newRoomName}
+              onChange={(e) => setNewRoomName(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm mb-3 outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <p className="text-xs text-slate-500 mb-2">초대할 멤버 선택 ({selectedMembers.length}명 선택됨)</p>
+            <div className="flex-1 overflow-hidden">
+              <MemberSelector selected={selectedMembers} onToggle={(id) => toggleMember(id, selectedMembers, setSelectedMembers)} />
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleCreateRoom}
+                disabled={!newRoomName.trim() || selectedMembers.length === 0}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl text-sm font-medium disabled:bg-slate-300 transition"
+              >
+                만들기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 초대 모달 */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2"><UserPlus size={18} className="text-indigo-600" /> 멤버 초대</h3>
+              <button onClick={() => { setShowInviteModal(false); setInviteMembers([]); }} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
+            </div>
+            <p className="text-xs text-slate-500 mb-2">초대할 멤버 선택 ({inviteMembers.length}명 선택됨)</p>
+            <div className="flex-1 overflow-hidden">
+              <MemberSelector selected={inviteMembers} onToggle={(id) => toggleMember(id, inviteMembers, setInviteMembers)} />
+            </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleInviteMembers}
+                disabled={inviteMembers.length === 0}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl text-sm font-medium disabled:bg-slate-300 transition"
+              >
+                초대하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

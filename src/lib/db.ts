@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Post, Comment, Mail, ChatMessage, CalendarEvent, Poll } from "./types";
+import type { Post, Comment, Mail, ChatMessage, ChatRoom, CalendarEvent, Poll } from "./types";
 
 // ===================== POSTS =====================
 
@@ -154,6 +154,33 @@ export async function sendChatMessage(msg: Omit<ChatMessage, "id" | "created_at"
 export async function deleteChatMessage(id: string): Promise<boolean> {
   const { error } = await supabase.from("chat_messages").delete().eq("id", id);
   if (error) console.error("[deleteChatMessage]", error.message);
+  return !error;
+}
+
+// ===================== CHAT ROOMS (단톡방) =====================
+
+export async function fetchChatRooms(userId: string): Promise<ChatRoom[]> {
+  const { data } = await supabase.from("chat_rooms").select("*").contains("members", [userId]).order("created_at", { ascending: false });
+  return (data as ChatRoom[]) || [];
+}
+
+export async function createChatRoom(room: Omit<ChatRoom, "id" | "created_at">): Promise<boolean> {
+  const { error } = await supabase.from("chat_rooms").insert(room);
+  if (error) console.error("[createChatRoom]", error.message);
+  return !error;
+}
+
+export async function updateChatRoomMembers(roomId: string, members: string[]): Promise<boolean> {
+  const { error } = await supabase.from("chat_rooms").update({ members }).eq("id", roomId);
+  if (error) console.error("[updateChatRoomMembers]", error.message);
+  return !error;
+}
+
+export async function deleteChatRoom(id: string): Promise<boolean> {
+  // 방 삭제 시 해당 방의 메시지도 삭제
+  await supabase.from("chat_messages").delete().eq("room", `group_${id}`);
+  const { error } = await supabase.from("chat_rooms").delete().eq("id", id);
+  if (error) console.error("[deleteChatRoom]", error.message);
   return !error;
 }
 

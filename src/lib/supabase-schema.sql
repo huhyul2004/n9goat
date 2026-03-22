@@ -136,6 +136,20 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_room_created ON chat_messages (room
 CREATE INDEX IF NOT EXISTS idx_chat_messages_author_id ON chat_messages (author_id);
 
 -- ============================================================
+-- 4-B. 단톡방 (chat_rooms)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS chat_rooms (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  owner_id TEXT NOT NULL,
+  members JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_rooms_owner_id ON chat_rooms (owner_id);
+CREATE INDEX IF NOT EXISTS idx_chat_rooms_members ON chat_rooms USING gin (members);
+
+-- ============================================================
 -- 5. 캘린더 이벤트 (calendar_events)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS calendar_events (
