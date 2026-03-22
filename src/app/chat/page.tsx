@@ -214,18 +214,6 @@ function ChatContent() {
                 <Hash size={11} /> {r.replace("중학교", "중")}
               </button>
             ))}
-            {/* 구분선 */}
-            {chatRooms.length > 0 && <div className="w-px bg-slate-300 mx-1 self-stretch shrink-0" />}
-            {/* 단톡방 */}
-            {chatRooms.map((gr) => (
-              <button key={gr.id} onClick={() => { setRoom(`group_${gr.id}`); setShowRoomSettings(false); }} className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap transition ${room === `group_${gr.id}` ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100"}`}>
-                <Users size={11} /> {gr.name}
-              </button>
-            ))}
-            {/* 단톡방 만들기 버튼 */}
-            <button onClick={() => setShowCreateRoom(true)} className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium whitespace-nowrap bg-slate-50 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition border border-dashed border-slate-300">
-              <Plus size={11} /> 단톡방
-            </button>
           </div>
           <button
             onClick={() => { const el = roomScrollRef.current; if (el) el.scrollBy({ left: 150, behavior: "smooth" }); }}
@@ -233,6 +221,19 @@ function ChatContent() {
           >
             <ChevronRight size={20} />
           </button>
+        </div>
+
+        {/* 단톡방 목록 행 */}
+        <div className="bg-white border-b border-slate-200 px-3 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hide shrink-0">
+          <button onClick={() => setShowCreateRoom(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap bg-purple-600 text-white hover:bg-purple-700 transition shrink-0">
+            <Plus size={11} /> 단톡방 만들기
+          </button>
+          {chatRooms.map((gr) => (
+            <button key={gr.id} onClick={() => { setRoom(`group_${gr.id}`); setShowRoomSettings(false); }} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition shrink-0 ${room === `group_${gr.id}` ? "bg-purple-600 text-white" : "bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200"}`}>
+              <Users size={11} /> {gr.name}
+            </button>
+          ))}
+          {chatRooms.length === 0 && <span className="text-xs text-slate-400 ml-1">아직 참여 중인 단톡방이 없습니다</span>}
         </div>
 
         {/* 단톡방 헤더 (설정 버튼) */}
