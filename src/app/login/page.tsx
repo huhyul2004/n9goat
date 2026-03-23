@@ -54,6 +54,11 @@ export default function LoginPage() {
     setChecking(false);
   }
 
+  function goAfterLogin() {
+    const seen = localStorage.getItem("n9_landing_seen");
+    router.push(seen ? "/board" : "/landing");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -78,7 +83,7 @@ export default function LoginPage() {
         return;
       }
       await login(name.trim(), school, role);
-      router.push("/board");
+      goAfterLogin();
       return;
     }
 
@@ -101,7 +106,7 @@ export default function LoginPage() {
         return;
       }
       await login(name.trim(), school, role);
-      router.push("/board");
+      goAfterLogin();
     } else {
       // 기존 계정: 비밀번호 확인
       const cred = await getCredential(accountId);
@@ -111,7 +116,7 @@ export default function LoginPage() {
         return;
       }
       await login(name.trim(), school, role);
-      router.push("/board");
+      goAfterLogin();
     }
   }
 

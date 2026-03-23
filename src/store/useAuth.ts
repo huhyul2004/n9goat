@@ -52,8 +52,8 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   login: async (name: string, school: School, role: Role) => {
-    // 소속+직책 조합으로 고정 ID 생성 (이름 무관, 같은 소속+직책 = 같은 계정)
-    const stableId = `${school}_${role}`;
+    // 소속+직책+이름 조합으로 고정 ID 생성 (같은 소속+직책+이름 = 같은 계정)
+    const stableId = `${school}_${role}_${name.trim()}`;
 
     const isAdmin = ["교육감", "교장", "교감"].includes(role);
     const user: Profile = {
@@ -74,7 +74,7 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   signup: async ({ name, school, role }) => {
-    const stableId = `${school}_${role}`;
+    const stableId = `${school}_${role}_${name.trim()}`;
 
     const isAdmin = ["교육감", "교장", "교감"].includes(role);
     const user: Profile = {

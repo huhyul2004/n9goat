@@ -119,7 +119,7 @@ export default function Sidebar() {
       {/* Desktop Sidebar */}
       <nav className="hidden md:flex w-64 bg-slate-900 flex-col flex-shrink-0">
         <button
-          onClick={() => router.push("/board")}
+          onClick={() => router.push("/landing")}
           className="px-6 py-6 mb-2 text-left hover:bg-slate-800/50 transition-colors"
         >
           <h1 className="text-2xl font-black text-white tracking-tight">N9</h1>

@@ -16,7 +16,12 @@ export default function Home() {
 
   useEffect(() => {
     if (!initialized) return;
-    router.replace(user ? "/board" : "/login");
+    if (!user) {
+      router.replace("/login");
+    } else {
+      const seen = localStorage.getItem("n9_landing_seen");
+      router.replace(seen ? "/board" : "/landing");
+    }
   }, [user, initialized, router]);
 
   return (
