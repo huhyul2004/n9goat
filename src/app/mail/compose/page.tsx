@@ -21,17 +21,20 @@ function ComposeContent() {
   const prefilledRole = searchParams.get("to_role") || "";
   const prefilledId = searchParams.get("to_id") || "";
 
+  const prefilledName = searchParams.get("to_name") || "";
+
   const [toSchool, setToSchool] = useState<School | "">(prefilledSchool as School | "");
   const [toRole, setToRole] = useState<Role | "">(prefilledRole as Role | "");
+  const [toName, setToName] = useState(prefilledName);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
   async function handleSend() {
-    if (!user || !toSchool || !toRole || !message.trim()) return;
+    if (!user || !toSchool || !toRole || !toName.trim() || !message.trim()) return;
 
     setSending(true);
-    const targetId = prefilledId || `${toSchool}_${toRole}`;
+    const targetId = prefilledId || `${toSchool}_${toRole}_${toName.trim()}`;
 
     const ok = await createMail({
       from_id: user.id,
@@ -73,32 +76,41 @@ function ComposeContent() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-slate-500 font-medium">받는 사람</p>
-                {prefilledSchool && prefilledRole ? (
+                {prefilledSchool && prefilledRole && prefilledName ? (
                   <p className="font-bold text-slate-800 text-sm md:text-base">
-                    {prefilledSchool} {prefilledRole}
+                    {prefilledSchool} {prefilledRole} {prefilledName}
                   </p>
                 ) : (
-                  <div className="flex gap-2 mt-1">
-                    <select
-                      value={toSchool}
-                      onChange={(e) => setToSchool(e.target.value as School)}
-                      className="p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none flex-1 min-w-0"
-                    >
-                      <option value="">학교 선택</option>
-                      {SCHOOLS.map((s) => (
-                        <option key={s} value={s}>{s.replace("중학교", "중")}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={toRole}
-                      onChange={(e) => setToRole(e.target.value as Role)}
-                      className="p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    >
-                      <option value="">직책</option>
-                      {ROLES.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
+                  <div className="space-y-2 mt-1">
+                    <div className="flex gap-2">
+                      <select
+                        value={toSchool}
+                        onChange={(e) => setToSchool(e.target.value as School)}
+                        className="p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none flex-1 min-w-0"
+                      >
+                        <option value="">학교 선택</option>
+                        {SCHOOLS.map((s) => (
+                          <option key={s} value={s}>{s.replace("중학교", "중")}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={toRole}
+                        onChange={(e) => setToRole(e.target.value as Role)}
+                        className="p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      >
+                        <option value="">직책</option>
+                        {ROLES.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <input
+                      type="text"
+                      value={toName}
+                      onChange={(e) => setToName(e.target.value)}
+                      placeholder="받는 사람 이름"
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
                   </div>
                 )}
               </div>
@@ -133,7 +145,7 @@ function ComposeContent() {
             <div className="p-3.5 md:p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
               <button
                 onClick={handleSend}
-                disabled={sending || !toSchool || !toRole || !message.trim()}
+                disabled={sending || !toSchool || !toRole || !toName.trim() || !message.trim()}
                 className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none text-sm"
               >
                 <Send size={16} /> {sending ? "전송 중..." : "전송하기"}

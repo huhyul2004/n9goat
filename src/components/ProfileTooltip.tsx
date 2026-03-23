@@ -8,9 +8,13 @@ interface ProfileTooltipProps {
   authorSchool: string;
   authorRole: string;
   authorId: string;
+  authorName?: string;
 }
 
-export default function ProfileTooltip({ authorSchool, authorRole, authorId }: ProfileTooltipProps) {
+export default function ProfileTooltip({ authorSchool, authorRole, authorId, authorName }: ProfileTooltipProps) {
+  // authorId가 "학교_직책_이름" 형식이면 이름 추출
+  const nameFromId = authorId.replace(`${authorSchool}_${authorRole}_`, "").replace(`${authorSchool}_${authorRole}`, "");
+  const displayName = authorName || nameFromId || "";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -54,7 +58,7 @@ export default function ProfileTooltip({ authorSchool, authorRole, authorId }: P
             onClick={() => {
               setOpen(false);
               router.push(
-                `/mail/compose?to_id=${encodeURIComponent(authorId)}&to_school=${encodeURIComponent(authorSchool)}&to_role=${encodeURIComponent(authorRole)}`
+                `/mail/compose?to_id=${encodeURIComponent(authorId)}&to_school=${encodeURIComponent(authorSchool)}&to_role=${encodeURIComponent(authorRole)}&to_name=${encodeURIComponent(displayName)}`
               );
             }}
             className="w-full flex items-center gap-2 text-sm text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg transition-colors"

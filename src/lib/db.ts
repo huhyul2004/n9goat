@@ -287,6 +287,58 @@ export async function fetchProfileById(userId: string) {
   return data;
 }
 
+// ===================== USER ID MIGRATION =====================
+// 기존 소속_직책 ID → 소속_직책_이름 ID로 마이그레이션
+export async function migrateUserId(oldId: string, newId: string): Promise<void> {
+  if (oldId === newId) return;
+
+  // 이미 새 ID로 데이터가 있으면 마이그레이션 불필요
+  const { count } = await supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", newId);
+  if (count && count > 0) return;
+
+  // 기존 ID로 데이터가 있는지 확인
+  const { count: oldCount } = await supabase.from("posts").select("*", { count: "exact", head: true }).eq("author_id", oldId);
+  if (!oldCount || oldCount === 0) return;
+
+  console.log(`[migrateUserId] ${oldId} → ${newId} (${oldCount} posts found)`);
+
+  // 모든 테이블의 author_id 업데이트
+  await Promise.all([
+    supabase.from("posts").update({ author_id: newId }).eq("author_id", oldId),
+    supabase.from("comments").update({ author_id: newId }).eq("author_id", oldId),
+    supabase.from("chat_messages").update({ author_id: newId }).eq("author_id", oldId),
+    supabase.from("calendar_events").update({ author_id: newId }).eq("author_id", oldId),
+    supabase.from("polls").update({ author_id: newId }).eq("author_id", oldId),
+  ]);
+
+  // 메일: from_id, to_id 둘 다
+  await Promise.all([
+    supabase.from("mails").update({ from_id: newId }).eq("from_id", oldId),
+    supabase.from("mails").update({ to_id: newId }).eq("to_id", oldId),
+  ]);
+
+  // 채팅방: owner_id + members 배열
+  const { data: rooms } = await supabase.from("chat_rooms").select("*").eq("owner_id", oldId);
+  if (rooms) {
+    for (const room of rooms) {
+      await supabase.from("chat_rooms").update({ owner_id: newId }).eq("id", room.id);
+    }
+  }
+  // members 배열에 포함된 경우
+  const { data: memberRooms } = await supabase.from("chat_rooms").select("*");
+  if (memberRooms) {
+    for (const room of memberRooms) {
+      const members = room.members as string[];
+      if (members.includes(oldId)) {
+        const updated = members.map((m: string) => m === oldId ? newId : m);
+        await supabase.from("chat_rooms").update({ members: updated }).eq("id", room.id);
+      }
+    }
+  }
+
+  console.log(`[migrateUserId] Migration complete: ${oldId} → ${newId}`);
+}
+
 // ===================== CREDENTIALS (계정 비밀번호) =====================
 
 export async function getCredential(accountId: string): Promise<{ password: string } | null> {

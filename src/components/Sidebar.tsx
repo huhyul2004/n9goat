@@ -7,6 +7,7 @@ import { useToast } from "@/store/useToast";
 import { getUnreadMailCount, getNewCommentCountOnMyPosts, markCommentsSeen } from "@/lib/db";
 import { ANNOUNCEMENT_ROLES } from "@/lib/constants";
 import { useSettings } from "@/store/useSettings";
+import WeeklySummary from "./WeeklySummary";
 import {
   MessageSquare,
   Mail,
@@ -17,6 +18,7 @@ import {
   BarChart3,
   Settings,
   X,
+  Newspaper,
 } from "lucide-react";
 
 function Badge({ count }: { count: number }) {
@@ -36,6 +38,7 @@ export default function Sidebar() {
   const [mailCount, setMailCount] = useState(0);
   const [commentCount, setCommentCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
   const prevMailCount = useRef(0);
   const prevCommentCount = useRef(0);
   const { avatar, init: initSettings } = useSettings();
@@ -153,6 +156,15 @@ export default function Sidebar() {
             );
           })}
 
+          {/* 주간 브리핑 버튼 */}
+          <button
+            onClick={() => setWeeklyOpen(true)}
+            className="flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm text-slate-400 hover:text-white hover:bg-slate-800 font-medium mt-2 border-t border-slate-700/50 pt-4"
+          >
+            <Newspaper size={20} />
+            <span className="flex-1 text-left">주간 브리핑</span>
+            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">AI</span>
+          </button>
         </div>
 
         <div className="mt-auto pt-4 pb-4 px-3 border-t border-slate-700/50">
@@ -246,6 +258,15 @@ export default function Sidebar() {
                 <span className="text-sm font-medium">내 프로필</span>
               </button>
 
+              <button
+                onClick={() => { setWeeklyOpen(true); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-indigo-50 text-slate-700 transition-colors"
+              >
+                <Newspaper size={20} />
+                <span className="text-sm font-medium flex-1 text-left">주간 브리핑</span>
+                <span className="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold">AI</span>
+              </button>
+
               <div className="border-t border-slate-100 my-2" />
 
               <button
@@ -259,6 +280,9 @@ export default function Sidebar() {
           </div>
         </div>
       )}
+
+      {/* 주간 브리핑 팝업 */}
+      <WeeklySummary open={weeklyOpen} onClose={() => setWeeklyOpen(false)} />
     </>
   );
 }

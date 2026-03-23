@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { Profile } from "@/lib/types";
 import type { School, Role } from "@/lib/constants";
 import { seedIfEmpty } from "@/lib/seed";
+import { migrateUserId } from "@/lib/db";
 
 // ============================================================
 // LOCAL MOCK MODE — 소속/직책 선택으로 로그인
@@ -52,14 +53,22 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   login: async (name: string, school: School, role: Role) => {
+    const trimmedName = name.trim();
     // 소속+직책+이름 조합으로 고정 ID 생성 (같은 소속+직책+이름 = 같은 계정)
-    const stableId = `${school}_${role}_${name.trim()}`;
+    const stableId = `${school}_${role}_${trimmedName}`;
+    // 기존 소속_직책 형식 ID → 새 형식으로 마이그레이션
+    const oldId = `${school}_${role}`;
+    try {
+      await migrateUserId(oldId, stableId);
+    } catch (e) {
+      console.warn("[login] migrateUserId failed:", e);
+    }
 
     const isAdmin = ["교육감", "교장", "교감"].includes(role);
     const user: Profile = {
       id: stableId,
       email: "",
-      name,
+      name: trimmedName,
       phone: "",
       school,
       role,
@@ -74,13 +83,20 @@ export const useAuth = create<AuthState>()((set, get) => ({
   },
 
   signup: async ({ name, school, role }) => {
-    const stableId = `${school}_${role}_${name.trim()}`;
+    const trimmedName = name.trim();
+    const stableId = `${school}_${role}_${trimmedName}`;
+    const oldId = `${school}_${role}`;
+    try {
+      await migrateUserId(oldId, stableId);
+    } catch (e) {
+      console.warn("[signup] migrateUserId failed:", e);
+    }
 
     const isAdmin = ["교육감", "교장", "교감"].includes(role);
     const user: Profile = {
       id: stableId,
       email: "",
-      name,
+      name: trimmedName,
       phone: "",
       school,
       role,
