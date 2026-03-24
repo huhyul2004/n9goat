@@ -6,7 +6,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createMail } from "@/lib/db";
 import { useAuth } from "@/store/useAuth";
-import { SCHOOLS, ROLES } from "@/lib/constants";
+import { SCHOOLS, SCHOOL_LIST, ROLES } from "@/lib/constants";
 import type { School, Role } from "@/lib/constants";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
@@ -89,7 +89,7 @@ function ComposeContent() {
                         className="p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none flex-1 min-w-0"
                       >
                         <option value="">학교 선택</option>
-                        {SCHOOLS.map((s) => (
+                        {SCHOOL_LIST.map((s) => (
                           <option key={s} value={s}>{s.replace("중학교", "중")}</option>
                         ))}
                       </select>

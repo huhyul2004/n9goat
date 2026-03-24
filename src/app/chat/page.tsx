@@ -8,7 +8,7 @@ import {
   fetchChatMessages, sendChatMessage, deleteChatMessage,
   fetchChatRooms, createChatRoom, updateChatRoomMembers, deleteChatRoom,
 } from "@/lib/db";
-import { SCHOOLS, ROLES } from "@/lib/constants";
+import { SCHOOLS, SCHOOL_LIST, ROLES } from "@/lib/constants";
 import type { School, Role } from "@/lib/constants";
 import type { ChatMessage, ChatRoom } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
@@ -18,10 +18,17 @@ import {
   ChevronLeft, ChevronRight, Plus, Users, LogOut, UserPlus, UserMinus, Settings,
 } from "lucide-react";
 
-const SCHOOL_ROOMS = ["전체", ...SCHOOLS];
+const ALL_SCHOOL_ROOMS = ["전체", ...SCHOOLS.filter((s) => s !== "교육감")];
 
 function ChatContent() {
   const { user } = useAuth();
+
+  // 교육감은 모든 채팅방 열람 가능, 일반 사용자는 자기 학교 + 전체만
+  const isSuperintendent = user?.role === "교육감";
+  const SCHOOL_ROOMS = isSuperintendent
+    ? ALL_SCHOOL_ROOMS
+    : ALL_SCHOOL_ROOMS.filter((r) => r === "전체" || r === user?.school);
+
   const [room, setRoom] = useState("전체");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -167,7 +174,7 @@ function ChatContent() {
 
   // 전체 멤버 목록 생성 (한번만)
   const allMembers = SCHOOLS.flatMap((school) =>
-    ROLES.map((role) => ({ id: `${school}_${role}`, school, role }))
+    ROLES.filter((role) => school === "교육감" ? role === "교육감" : role !== "교육감").map((role) => ({ id: `${school}_${role}`, school, role }))
   ).filter((m) => m.id !== user?.id);
 
   function renderMemberList(selected: string[], onToggle: (id: string) => void, excludeIds?: string[]) {

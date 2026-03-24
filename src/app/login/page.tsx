@@ -6,13 +6,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/useAuth";
 import { getCredential, createCredential } from "@/lib/db";
-import { SCHOOLS, ROLES } from "@/lib/constants";
+import { SCHOOLS, SCHOOL_LIST, ROLES } from "@/lib/constants";
 import type { School, Role } from "@/lib/constants";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
   const [name, setName] = useState("");
-  const [school, setSchool] = useState<School>(SCHOOLS[0]);
+  const [school, setSchool] = useState<School>(SCHOOL_LIST[0] as School);
   const [role, setRole] = useState<Role>(ROLES[0]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,6 +29,15 @@ export default function LoginPage() {
   useEffect(() => {
     if (initialized && user) router.replace("/board");
   }, [initialized, user, router]);
+
+  // 교육감 직책 선택 시 소속 강제 설정
+  useEffect(() => {
+    if (role === "교육감") {
+      setSchool("교육감" as School);
+    } else if (school === "교육감") {
+      setSchool(SCHOOL_LIST[0] as School);
+    }
+  }, [role]);
 
   // 소속/직책 변경 시 신규 계정 여부 확인
   useEffect(() => {
@@ -200,13 +209,19 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-800 mb-2">소속</label>
-              <select
-                value={school}
-                onChange={(e) => setSchool(e.target.value as School)}
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all text-slate-900"
-              >
-                {SCHOOLS.map((s) => (<option key={s} value={s}>{s}</option>))}
-              </select>
+              {role === "교육감" ? (
+                <div className="w-full p-3.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 font-medium">
+                  교육감
+                </div>
+              ) : (
+                <select
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value as School)}
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all text-slate-900"
+                >
+                  {SCHOOL_LIST.map((s) => (<option key={s} value={s}>{s}</option>))}
+                </select>
+              )}
             </div>
 
             <div>

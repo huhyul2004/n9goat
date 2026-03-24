@@ -1,4 +1,5 @@
 export const SCHOOLS = [
+  "교육감",
   "신정중학교",
   "신일중학교",
   "학성중학교",
@@ -16,6 +17,9 @@ export const SCHOOLS = [
   "대현중학교",
   "무거중학교",
 ] as const;
+
+// 교육감을 제외한 실제 학교 목록 (로그인 소속 선택용)
+export const SCHOOL_LIST = SCHOOLS.filter((s) => s !== "교육감");
 
 export const ROLES = [
   "교육감",

@@ -7,7 +7,7 @@ import {
   fetchPosts as dbFetchPosts, createPost, updatePost, deletePost, togglePinPost,
   fetchComments, createComment, updateComment, deleteComment, getCommentCounts,
 } from "@/lib/db";
-import { ANNOUNCEMENT_ROLES, DELETE_ROLES, SCHOOLS } from "@/lib/constants";
+import { ANNOUNCEMENT_ROLES, DELETE_ROLES, SCHOOLS, SCHOOL_LIST } from "@/lib/constants";
 import type { Post, Comment } from "@/lib/types";
 import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
@@ -593,7 +593,7 @@ function BoardContent() {
                 <div className="mt-10 bg-white rounded-2xl border border-slate-100 p-6">
                   <h3 className="text-sm font-bold text-slate-700 mb-3">참여 학교</h3>
                   <div className="flex flex-wrap gap-2">
-                    {SCHOOLS.map((s) => (
+                    {SCHOOL_LIST.map((s) => (
                       <span key={s} className="text-xs bg-slate-50 text-slate-500 px-2.5 py-1 rounded-lg border border-slate-100">
                         {s}
                       </span>

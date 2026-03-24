@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/store/useAuth";
-import { SCHOOLS, ROLES } from "@/lib/constants";
+import { SCHOOLS, SCHOOL_LIST, ROLES } from "@/lib/constants";
 import type { School, Role } from "@/lib/constants";
 
 export default function InvitePage() {
@@ -20,7 +20,7 @@ export default function InvitePage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [school, setSchool] = useState<School>(SCHOOLS[0]);
+  const [school, setSchool] = useState<School>(SCHOOL_LIST[0] as School);
   const [role, setRole] = useState<Role>(ROLES[4]); // 선생님 default
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -203,7 +203,7 @@ export default function InvitePage() {
               onChange={(e) => setSchool(e.target.value as School)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              {SCHOOLS.map((s) => (
+              {SCHOOL_LIST.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
