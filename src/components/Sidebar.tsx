@@ -16,6 +16,7 @@ import {
   CalendarDays,
   MessagesSquare,
   BarChart3,
+  LayoutDashboard,
   Settings,
   X,
   Newspaper,
@@ -90,7 +91,12 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  const currentMatch = pathname.startsWith("/mail")
+  const DASHBOARD_ROLES = ["교육감", "교장", "교감", "개발자", "학생부장", "선생님", "학생회"];
+  const showDashboard = user && DASHBOARD_ROLES.includes(user.role);
+
+  const currentMatch = pathname.startsWith("/dashboard")
+    ? "dashboard"
+    : pathname.startsWith("/mail")
     ? "mail"
     : pathname.startsWith("/chat")
     ? "chat"
@@ -110,6 +116,7 @@ export default function Sidebar() {
     { href: "/chat", match: "chat", icon: MessagesSquare, label: "Chat", badge: 0 },
     { href: "/calendar", match: "calendar", icon: CalendarDays, label: "Calendar", badge: 0 },
     { href: "/poll", match: "poll", icon: BarChart3, label: "Poll", badge: 0 },
+    ...(showDashboard ? [{ href: "/dashboard", match: "dashboard", icon: LayoutDashboard, label: "Dashboard", badge: 0 }] : []),
   ];
 
   const handleLogout = async () => {

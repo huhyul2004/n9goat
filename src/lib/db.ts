@@ -351,3 +351,96 @@ export async function createCredential(accountId: string, password: string): Pro
   if (error) console.error("[createCredential]", error.message);
   return !error;
 }
+
+// ===================== DASHBOARD =====================
+
+export async function fetchDashboardStats() {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  const weekStart = monday.toISOString();
+
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayISO = todayStart.toISOString();
+
+  const [
+    allPosts, weekPosts, todayPosts,
+    allComments, weekComments,
+    allPolls, allEvents, allChats,
+  ] = await Promise.all([
+    supabase.from("posts").select("id, category, author_school, author_role, author_id, title, created_at", { count: "exact" }),
+    supabase.from("posts").select("id, category, author_school, author_id, title, created_at").gte("created_at", weekStart),
+    supabase.from("posts").select("id, category, author_school, created_at").gte("created_at", todayISO),
+    supabase.from("comments").select("id, post_id, author_id, created_at", { count: "exact" }),
+    supabase.from("comments").select("id, post_id, author_id, created_at").gte("created_at", weekStart),
+    supabase.from("polls").select("*"),
+    supabase.from("calendar_events").select("id, title, date, author_school, created_at"),
+    supabase.from("chat_messages").select("id, room, author_school, created_at").gte("created_at", weekStart),
+  ]);
+
+  const posts = allPosts.data || [];
+  const comments = allComments.data || [];
+  const polls = (allPolls.data || []) as Poll[];
+  const events = allEvents.data || [];
+  const weekPostsData = weekPosts.data || [];
+  const todayPostsData = todayPosts.data || [];
+  const weekCommentsData = weekComments.data || [];
+  const weekChatsData = allChats.data || [];
+
+  // Comment counts per post (for popular posts)
+  const commentCountMap: Record<string, number> = {};
+  comments.forEach((c: { post_id: string }) => {
+    commentCountMap[c.post_id] = (commentCountMap[c.post_id] || 0) + 1;
+  });
+
+  // Popular posts (top 5 by comments)
+  const popularPosts = posts
+    .map((p: { id: string; title: string; author_school: string; author_id: string; category: string; created_at: string }) => ({
+      ...p,
+      comment_count: commentCountMap[p.id] || 0,
+    }))
+    .sort((a: { comment_count: number }, b: { comment_count: number }) => b.comment_count - a.comment_count)
+    .slice(0, 5);
+
+  // School activity (posts per school)
+  const schoolActivity: Record<string, { posts: number; comments: number; chats: number }> = {};
+  weekPostsData.forEach((p: { author_school: string }) => {
+    if (!schoolActivity[p.author_school]) schoolActivity[p.author_school] = { posts: 0, comments: 0, chats: 0 };
+    schoolActivity[p.author_school].posts++;
+  });
+  weekCommentsData.forEach((c: { author_id: string }) => {
+    const school = c.author_id?.split("_")[0] || "기타";
+    if (!schoolActivity[school]) schoolActivity[school] = { posts: 0, comments: 0, chats: 0 };
+    schoolActivity[school].comments++;
+  });
+  weekChatsData.forEach((m: { author_school: string }) => {
+    if (!schoolActivity[m.author_school]) schoolActivity[m.author_school] = { posts: 0, comments: 0, chats: 0 };
+    schoolActivity[m.author_school].chats++;
+  });
+
+  // Unique users this week
+  const weeklyUsers = new Set([
+    ...weekPostsData.map((p: { author_id: string }) => p.author_id),
+    ...weekCommentsData.map((c: { author_id: string }) => c.author_id),
+    ...weekChatsData.map((m: { author_school: string }) => m.author_school),
+  ]);
+
+  return {
+    totalPosts: posts.length,
+    totalComments: comments.length,
+    totalPolls: polls.length,
+    totalEvents: events.length,
+    todayPosts: todayPostsData.length,
+    weekPosts: weekPostsData.length,
+    weekComments: weekCommentsData.length,
+    weekChats: weekChatsData.length,
+    weeklyActiveUsers: weeklyUsers.size,
+    popularPosts,
+    schoolActivity,
+    polls,
+  };
+}
