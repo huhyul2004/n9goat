@@ -16,7 +16,6 @@ import {
   Newspaper, ChevronRight, Trophy, Medal, Award, Loader2,
 } from "lucide-react";
 
-const DASHBOARD_ROLES = ["교육감", "교장", "교감", "개발자", "학생부장", "선생님", "학생회"];
 
 interface DashboardData {
   totalPosts: number;
@@ -67,15 +66,14 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, [load]);
 
-  if (!user || !DASHBOARD_ROLES.includes(user.role)) {
+  if (!user) {
     return (
       <div className="flex h-screen bg-slate-50 text-slate-800">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <LayoutDashboard size={48} className="mx-auto text-slate-300 mb-4" />
-            <p className="text-lg font-bold text-slate-600">접근 권한이 없습니다</p>
-            <p className="text-sm text-slate-400 mt-1">학생회 또는 선생님 이상만 대시보드를 이용할 수 있습니다</p>
+            <p className="text-lg font-bold text-slate-600">로그인이 필요합니다</p>
           </div>
         </main>
       </div>
