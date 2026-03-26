@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/useAuth";
 import { fetchDashboardStats } from "@/lib/db";
 import type { Poll } from "@/lib/types";
@@ -42,6 +43,7 @@ interface DashboardData {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [weeklyOpen, setWeeklyOpen] = useState(false);
@@ -188,7 +190,11 @@ function DashboardContent() {
                         const RankIcon = i === 0 ? Trophy : i === 1 ? Medal : i === 2 ? Award : ChevronRight;
                         const rankColor = i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-slate-300";
                         return (
-                          <div key={post.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                          <div
+                            key={post.id}
+                            onClick={() => router.push(`/board?post=${post.id}`)}
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                          >
                             <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${i < 3 ? "bg-slate-50" : ""}`}>
                               <RankIcon size={i < 3 ? 20 : 16} className={rankColor} />
                             </div>

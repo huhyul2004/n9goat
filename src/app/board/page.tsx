@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   fetchPosts as dbFetchPosts, createPost, updatePost, deletePost, togglePinPost,
   fetchComments, createComment, updateComment, deleteComment, getCommentCounts,
@@ -24,6 +25,7 @@ type SortMode = "latest" | "most_comments" | "mine";
 function BoardContent() {
   const { user } = useAuth();
   const toast = useToast();
+  const searchParams = useSearchParams();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [announcements, setAnnouncements] = useState<Post[]>([]);
@@ -64,6 +66,17 @@ function BoardContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadPosts(); }, []);
+
+  // URL 쿼리 파라미터로 게시글 자동 펼치기 (대시보드에서 클릭 시)
+  useEffect(() => {
+    const postId = searchParams.get("post");
+    if (postId && !loading) {
+      setExpandedId(postId);
+      setTimeout(() => {
+        document.getElementById(`post-${postId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
+  }, [searchParams, loading]);
 
   async function loadPosts() {
     setLoading(true);
@@ -268,7 +281,7 @@ function BoardContent() {
     const showMenu = canDelete || canEdit;
 
     return (
-      <div key={post.id} className={`bg-white rounded-2xl overflow-hidden transition-all hover:shadow-md ${isAnnouncement ? "border-2 border-amber-300/60 shadow-amber-100/50" : "border border-slate-100 shadow-sm"}`}>
+      <div key={post.id} id={`post-${post.id}`} className={`bg-white rounded-2xl overflow-hidden transition-all hover:shadow-md ${isAnnouncement ? "border-2 border-amber-300/60 shadow-amber-100/50" : "border border-slate-100 shadow-sm"}`}>
         <div className="p-5">
           <div className="flex items-start gap-4">
             {post.is_anonymous ? (
