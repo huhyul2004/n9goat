@@ -6,10 +6,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
 import { fetchEvents, createEvent, deleteEvent } from "@/lib/db";
+import { SCHOOL_LIST } from "@/lib/constants";
 import type { CalendarEvent } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { ChevronLeft, ChevronRight, Plus, X, Trash2, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, CalendarDays, School, ArrowLeft } from "lucide-react";
 
 function CalendarContent() {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ function CalendarContent() {
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
 
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
 
@@ -47,7 +49,7 @@ function CalendarContent() {
       title: newTitle.trim(),
       description: newDesc.trim(),
       date: selectedDate,
-      author_school: user.school,
+      author_school: selectedSchool || user.school,
       author_role: user.role,
       author_id: user.id,
     });
@@ -72,14 +74,19 @@ function CalendarContent() {
   }
   if (week.length > 0) { while (week.length < 7) week.push(null); weeks.push(week); }
 
+  // 필터링: 학교 선택 시 해당 학교만, 기본은 학교 전용 일정 제외
+  const filteredEvents = selectedSchool
+    ? events.filter((e) => e.author_school === selectedSchool)
+    : events.filter((e) => !SCHOOL_LIST.includes(e.author_school as typeof SCHOOL_LIST[number]));
+
   const eventsForDate = (d: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    return events.filter((e) => e.date === dateStr);
+    return filteredEvents.filter((e) => e.date === dateStr);
   };
 
-  const selectedEvents = selectedDate ? events.filter((e) => e.date === selectedDate) : [];
+  const selectedEvents = selectedDate ? filteredEvents.filter((e) => e.date === selectedDate) : [];
   const MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-  const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+  const DAYNAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-800">
@@ -88,8 +95,22 @@ function CalendarContent() {
         <div className="max-w-3xl mx-auto p-3 md:p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2"><CalendarDays className="text-indigo-600" size={22} /> Calendar</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <CalendarDays className="text-indigo-600" size={22} /> Calendar
+            </h2>
           </div>
+
+          {/* 학교 선택 뱃지 */}
+          {selectedSchool && (
+            <button
+              onClick={() => { setSelectedSchool(null); setSelectedDate(null); }}
+              className="flex items-center gap-2 mb-4 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 transition"
+            >
+              <ArrowLeft size={16} />
+              {selectedSchool.replace("중학교", "중")} 학사일정
+              <X size={14} className="ml-1 opacity-70" />
+            </button>
+          )}
 
           {/* Month nav */}
           <div className="flex items-center justify-between mb-3 md:mb-4 bg-white rounded-xl border border-slate-200 px-4 py-3">
@@ -101,7 +122,7 @@ function CalendarContent() {
           {/* Calendar grid */}
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-4 md:mb-6">
             <div className="grid grid-cols-7">
-              {DAYS.map((d, i) => (
+              {DAYNAMES.map((d, i) => (
                 <div key={d} className={`text-center text-[11px] md:text-xs font-medium py-2 ${i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-slate-500"}`}>{d}</div>
               ))}
             </div>
@@ -119,15 +140,15 @@ function CalendarContent() {
                       {dayEvents.length > 0 && (
                         <>
                           {/* Desktop: show titles */}
-                          <div className="hidden md:block mt-0.5 space-y-0.5">
+                          <div className="hidden md:block mt-0.5 space-y-0.5 w-full">
                             {dayEvents.slice(0, 2).map((e) => (
-                              <div key={e.id} className="text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 truncate">{e.title}</div>
+                              <div key={e.id} className={`text-[9px] rounded px-1 truncate ${selectedSchool ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700"}`}>{e.title}</div>
                             ))}
                             {dayEvents.length > 2 && <div className="text-[9px] text-slate-400 px-1">+{dayEvents.length - 2}</div>}
                           </div>
                           {/* Mobile: show dot */}
                           <div className="md:hidden flex justify-center mt-0.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                            <div className={`w-1.5 h-1.5 rounded-full ${selectedSchool ? "bg-emerald-500" : "bg-indigo-500"}`} />
                           </div>
                         </>
                       )}
@@ -140,7 +161,7 @@ function CalendarContent() {
 
           {/* Selected date events */}
           {selectedDate && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5 mb-4 md:mb-6">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-slate-800 text-sm md:text-base">{selectedDate}</h3>
                 <button onClick={() => setShowAdd(true)} className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition active:bg-indigo-800"><Plus size={14} /> 일정 추가</button>
@@ -175,6 +196,29 @@ function CalendarContent() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* 학교전용 캘린더 선택 */}
+          {!selectedSchool && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
+              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <School size={18} className="text-emerald-600" />
+                학교전용 캘린더
+              </h3>
+              <p className="text-xs text-slate-400 mb-4">학교를 선택하면 해당 학교의 학사일정을 확인할 수 있습니다.</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {SCHOOL_LIST.map((school) => (
+                  <button
+                    key={school}
+                    onClick={() => { setSelectedSchool(school); setSelectedDate(null); }}
+                    className="flex items-center gap-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-700 hover:text-emerald-700 transition"
+                  >
+                    <School size={14} className="text-slate-400 flex-shrink-0" />
+                    <span className="truncate">{school.replace("중학교", "중")}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
