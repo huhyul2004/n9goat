@@ -9,7 +9,7 @@ import { getMyPosts, getMyComments, fetchMails, fetchProfileById } from "@/lib/d
 import type { Post, Comment, Mail, Profile } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { User, MessageSquare, MessageCircle, Inbox, SendHorizontal, ArrowLeft, Settings, Plus, Moon, Sun, ImageIcon } from "lucide-react";
+import { User, MessageSquare, MessageCircle, Inbox, SendHorizontal, ArrowLeft, Settings, Plus, Moon, Sun, ImageIcon, Pencil, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSettings } from "@/store/useSettings";
 
@@ -26,6 +26,9 @@ function ProfileContent() {
 
   const [targetProfile, setTargetProfile] = useState<Profile | null>(null);
   const [tab, setTab] = useState<Tab>("posts");
+  const [bio, setBio] = useState("");
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioInput, setBioInput] = useState("");
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [inbox, setInbox] = useState<Mail[]>([]);
@@ -35,6 +38,16 @@ function ProfileContent() {
   const displayUser = isOwnProfile ? user : targetProfile;
 
   useEffect(() => { initSettings(); }, [initSettings]);
+
+  // 자기소개 로드
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const uid = targetUserId || user?.id;
+    if (uid) {
+      const saved = localStorage.getItem(`n9_bio_${uid}`);
+      setBio(saved || "");
+    }
+  }, [targetUserId, user?.id]);
 
   useEffect(() => {
     if (targetUserId && targetUserId !== user?.id) {
@@ -123,6 +136,54 @@ function ProfileContent() {
                   <h2 className="text-xl font-bold text-slate-800">{displayUser?.name}</h2>
                   <p className="text-sm text-indigo-600 font-medium">{displayUser?.school} {displayUser?.role}</p>
                 </div>
+              </div>
+
+              {/* 자기소개 */}
+              <div className="mt-2">
+                {editingBio && isOwnProfile ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={bioInput}
+                      onChange={(e) => setBioInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          setBio(bioInput);
+                          localStorage.setItem(`n9_bio_${user?.id}`, bioInput);
+                          setEditingBio(false);
+                        }
+                      }}
+                      placeholder="자기소개를 입력하세요"
+                      className="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                      maxLength={100}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => {
+                        setBio(bioInput);
+                        localStorage.setItem(`n9_bio_${user?.id}`, bioInput);
+                        setEditingBio(false);
+                      }}
+                      className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                    >
+                      <Check size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className={`text-sm ${bio ? "text-slate-600" : "text-slate-400 italic"}`}>
+                      {bio || (isOwnProfile ? "자기소개를 작성해보세요" : "자기소개가 없습니다")}
+                    </p>
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => { setBioInput(bio); setEditingBio(true); }}
+                        className="text-slate-400 hover:text-indigo-600 transition p-1"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
