@@ -115,7 +115,7 @@ function CalendarContent() {
                   const isSelected = dateStr === selectedDate;
                   return (
                     <button key={di} onClick={() => setSelectedDate(dateStr)} className={`h-12 md:h-16 p-0.5 md:p-1 text-left transition active:bg-indigo-100 hover:bg-indigo-50 relative ${isSelected ? "bg-indigo-50 ring-2 ring-indigo-400 ring-inset" : ""}`}>
-                      <span className={`text-[11px] md:text-xs block ${isToday ? "bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center mx-auto md:mx-0" : di === 0 ? "text-red-400 text-center md:text-left" : di === 6 ? "text-blue-400 text-center md:text-left" : "text-slate-700 text-center md:text-left"}`}>{d}</span>
+                      <span className={`text-[11px] md:text-xs block text-center ${isToday ? "bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center mx-auto" : di === 0 ? "text-red-400" : di === 6 ? "text-blue-400" : "text-slate-700"}`}>{d}</span>
                       {dayEvents.length > 0 && (
                         <>
                           {/* Desktop: show titles */}

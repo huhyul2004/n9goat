@@ -46,8 +46,15 @@ function PollContent() {
 
   async function handleVote(pollId: string, option: string) {
     if (!user) return;
+    // 즉시 로컬 상태 업데이트 (낙관적 UI)
+    setPolls((prev) =>
+      prev.map((p) => {
+        if (p.id !== pollId) return p;
+        const newVotes = { ...p.votes, [user.id]: option };
+        return { ...p, votes: newVotes };
+      })
+    );
     await votePoll(pollId, user.id, option);
-    load();
   }
 
   async function handleDeletePoll(pollId: string) {
