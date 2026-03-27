@@ -245,6 +245,16 @@ export async function votePoll(pollId: string, userId: string, option: string): 
   return !error;
 }
 
+export async function cancelVote(pollId: string, userId: string): Promise<boolean> {
+  const { data } = await supabase.from("polls").select("votes").eq("id", pollId).single();
+  if (!data) return false;
+  const currentVotes = { ...(data.votes || {}) };
+  delete currentVotes[userId];
+  const { error } = await supabase.from("polls").update({ votes: currentVotes }).eq("id", pollId);
+  if (error) console.error("[cancelVote]", error.message);
+  return !error;
+}
+
 // ===================== PROFILE HELPERS =====================
 
 export async function getMyPosts(userId: string): Promise<Post[]> {

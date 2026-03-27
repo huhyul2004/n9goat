@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
-import { fetchPolls, createPoll, votePoll, deletePoll } from "@/lib/db";
+import { fetchPolls, createPoll, votePoll, cancelVote, deletePoll } from "@/lib/db";
 import type { Poll } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
@@ -46,6 +46,23 @@ function PollContent() {
 
   async function handleVote(pollId: string, option: string) {
     if (!user) return;
+    const poll = polls.find((p) => p.id === pollId);
+    const myVote = poll?.votes[user.id];
+
+    // 같은 옵션 다시 누르면 투표 취소
+    if (myVote === option) {
+      setPolls((prev) =>
+        prev.map((p) => {
+          if (p.id !== pollId) return p;
+          const newVotes = { ...p.votes };
+          delete newVotes[user.id];
+          return { ...p, votes: newVotes };
+        })
+      );
+      await cancelVote(pollId, user.id);
+      return;
+    }
+
     // 즉시 로컬 상태 업데이트 (낙관적 UI)
     setPolls((prev) =>
       prev.map((p) => {
@@ -153,9 +170,10 @@ function PollContent() {
                               isMyVote ? "border-indigo-400 bg-indigo-50" : hasVoted ? "border-slate-200 bg-slate-50 hover:border-indigo-300" : "border-slate-200 hover:border-indigo-300 hover:bg-indigo-50"
                             }`}
                           >
-                            {hasVoted && (
-                              <div className="absolute inset-y-0 left-0 bg-indigo-100/50 transition-all" style={{ width: `${pct}%` }} />
-                            )}
+                            <div
+                              className="absolute inset-y-0 left-0 bg-indigo-100/50 transition-all duration-500 ease-out"
+                              style={{ width: hasVoted ? `${pct}%` : "0%" }}
+                            />
                             <div className="relative flex items-center justify-between px-4 py-2.5">
                               <span className={`text-sm ${isMyVote ? "font-bold text-indigo-700" : "text-slate-700"}`}>
                                 {isMyVote && <Check size={14} className="inline mr-1" />}{opt}
