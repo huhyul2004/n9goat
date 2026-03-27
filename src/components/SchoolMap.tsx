@@ -62,13 +62,18 @@ export default function SchoolMap({ className }: { className?: string }) {
 
     const icon = createSchoolIcon();
 
+    const bounds = map.getBounds();
+
     SCHOOLS.forEach((s) => {
       const marker = L.marker([s.lat, s.lng], { icon }).addTo(map);
+      // 지도 상단 30% 영역에 있는 학교는 툴팁을 아래로
+      const topThreshold = bounds.getNorth() - (bounds.getNorth() - bounds.getSouth()) * 0.3;
+      const isNearTop = s.lat > topThreshold;
       marker.bindTooltip(s.name.replace("중학교", "중"), {
         permanent: false,
-        direction: "top",
+        direction: isNearTop ? "bottom" : "top",
         className: "school-tooltip",
-        offset: [0, -8],
+        offset: [0, isNearTop ? 8 : -8],
       });
     });
 
@@ -95,6 +100,10 @@ export default function SchoolMap({ className }: { className?: string }) {
         }
         .school-tooltip::before {
           border-top-color: rgba(30,41,59,0.95) !important;
+        }
+        .school-tooltip.leaflet-tooltip-bottom::before {
+          border-top-color: transparent !important;
+          border-bottom-color: rgba(30,41,59,0.95) !important;
         }
       `}</style>
       <div ref={mapRef} className={`rounded-2xl overflow-hidden ${className || ""}`} style={{ minHeight: 350 }} />
