@@ -10,7 +10,7 @@ import { SCHOOL_LIST } from "@/lib/constants";
 import type { CalendarEvent } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { ChevronLeft, ChevronRight, Plus, X, Trash2, CalendarDays, School, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, Trash2, CalendarDays, School, ArrowLeft, Globe } from "lucide-react";
 
 function CalendarContent() {
   const { user } = useAuth();
@@ -23,7 +23,7 @@ function CalendarContent() {
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [selectedSchool, setSelectedSchool] = useState<string | null>(null);
+  const [selectedSchool, setSelectedSchool] = useState<string>("전체");
 
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
 
@@ -74,10 +74,10 @@ function CalendarContent() {
   }
   if (week.length > 0) { while (week.length < 7) week.push(null); weeks.push(week); }
 
-  // 필터링: 학교 선택 시 해당 학교만, 기본은 학교 전용 일정 제외
-  const filteredEvents = selectedSchool
-    ? events.filter((e) => e.author_school === selectedSchool)
-    : events.filter((e) => !SCHOOL_LIST.includes(e.author_school as typeof SCHOOL_LIST[number]));
+  // 필터링: 전체=모든 일정, 학교 선택 시 해당 학교만
+  const filteredEvents = selectedSchool === "전체"
+    ? events
+    : events.filter((e) => e.author_school === selectedSchool);
 
   const eventsForDate = (d: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -101,9 +101,9 @@ function CalendarContent() {
           </div>
 
           {/* 학교 선택 뱃지 */}
-          {selectedSchool && (
+          {selectedSchool !== "전체" && (
             <button
-              onClick={() => { setSelectedSchool(null); setSelectedDate(null); }}
+              onClick={() => { setSelectedSchool("전체"); setSelectedDate(null); }}
               className="flex items-center gap-2 mb-4 bg-indigo-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-indigo-700 transition"
             >
               <ArrowLeft size={16} />
@@ -142,13 +142,13 @@ function CalendarContent() {
                           {/* Desktop: show titles */}
                           <div className="hidden md:block mt-0.5 space-y-0.5 w-full">
                             {dayEvents.slice(0, 2).map((e) => (
-                              <div key={e.id} className={`text-[9px] rounded px-1 truncate ${selectedSchool ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700"}`}>{e.title}</div>
+                              <div key={e.id} className={`text-[9px] rounded px-1 truncate ${selectedSchool !== "전체" ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700"}`}>{e.title}</div>
                             ))}
                             {dayEvents.length > 2 && <div className="text-[9px] text-slate-400 px-1">+{dayEvents.length - 2}</div>}
                           </div>
                           {/* Mobile: show dot */}
                           <div className="md:hidden flex justify-center mt-0.5">
-                            <div className={`w-1.5 h-1.5 rounded-full ${selectedSchool ? "bg-emerald-500" : "bg-indigo-500"}`} />
+                            <div className={`w-1.5 h-1.5 rounded-full ${selectedSchool !== "전체" ? "bg-emerald-500" : "bg-indigo-500"}`} />
                           </div>
                         </>
                       )}
@@ -199,28 +199,40 @@ function CalendarContent() {
             </div>
           )}
 
-          {/* 학교전용 캘린더 선택 */}
-          {!selectedSchool && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
-              <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                <School size={18} className="text-emerald-600" />
-                학교전용 캘린더
-              </h3>
-              <p className="text-xs text-slate-400 mb-4">학교를 선택하면 해당 학교의 학사일정을 확인할 수 있습니다.</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {SCHOOL_LIST.map((school) => (
-                  <button
-                    key={school}
-                    onClick={() => { setSelectedSchool(school); setSelectedDate(null); }}
-                    className="flex items-center gap-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-700 hover:text-emerald-700 transition"
-                  >
-                    <School size={14} className="text-slate-400 flex-shrink-0" />
-                    <span className="truncate">{school.replace("중학교", "중")}</span>
-                  </button>
-                ))}
-              </div>
+          {/* 캘린더 필터 선택 */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
+            <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+              <School size={18} className="text-emerald-600" />
+              캘린더 선택
+            </h3>
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
+              <button
+                onClick={() => { setSelectedSchool("전체"); setSelectedDate(null); }}
+                className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition border ${
+                  selectedSchool === "전체"
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-slate-50 hover:bg-indigo-50 border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-700"
+                }`}
+              >
+                <Globe size={14} className={selectedSchool === "전체" ? "text-white" : "text-slate-400"} />
+                <span>전체</span>
+              </button>
+              {SCHOOL_LIST.map((school) => (
+                <button
+                  key={school}
+                  onClick={() => { setSelectedSchool(school); setSelectedDate(null); }}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition border ${
+                    selectedSchool === school
+                      ? "bg-emerald-600 text-white border-emerald-600"
+                      : "bg-slate-50 hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-700"
+                  }`}
+                >
+                  <School size={14} className={selectedSchool === school ? "text-white" : "text-slate-400"} />
+                  <span className="truncate">{school.replace("중학교", "중")}</span>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </main>
     </div>
