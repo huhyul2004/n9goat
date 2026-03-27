@@ -199,56 +199,70 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Advantages */}
-      <section className="px-6 py-16 md:py-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12 md:mb-16">
-            <h2 className="text-3xl md:text-4xl font-black mb-4">
-              왜 N9인가요?
-            </h2>
+      {/* 16개 학교가 하나로 + 남구 지도 */}
+      <section className="px-6 py-16 md:py-24">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-16">
+          {/* 지도 */}
+          <div className="w-full md:w-1/2 flex-shrink-0">
+            <div className="relative bg-slate-800/40 border border-slate-700/40 rounded-3xl p-6 md:p-8">
+              <p className="text-[10px] text-slate-500 font-medium mb-3 tracking-wider uppercase">울산광역시 남구</p>
+              <svg viewBox="0 0 400 420" className="w-full" xmlns="http://www.w3.org/2000/svg">
+                {/* 남구 영역 */}
+                <path d="M60,80 L140,30 L260,20 L340,60 L370,140 L380,240 L350,320 L300,370 L200,400 L100,380 L40,320 L20,220 L30,140 Z" fill="rgba(99,102,241,0.08)" stroke="rgba(99,102,241,0.25)" strokeWidth="1.5" />
+                {/* 도로 */}
+                <line x1="60" y1="200" x2="380" y2="200" stroke="rgba(148,163,184,0.1)" strokeWidth="2" strokeDasharray="6,4" />
+                <line x1="200" y1="20" x2="200" y2="400" stroke="rgba(148,163,184,0.1)" strokeWidth="2" strokeDasharray="6,4" />
+                <line x1="80" y1="100" x2="350" y2="340" stroke="rgba(148,163,184,0.06)" strokeWidth="1.5" strokeDasharray="4,4" />
+                {/* 학교 핀 */}
+                {[
+                  { x: 120, y: 70, name: "신정중" },
+                  { x: 260, y: 55, name: "신일중" },
+                  { x: 80, y: 145, name: "학성중" },
+                  { x: 190, y: 110, name: "월평중" },
+                  { x: 310, y: 115, name: "동평중" },
+                  { x: 145, y: 185, name: "태화중" },
+                  { x: 285, y: 180, name: "울산강남중" },
+                  { x: 95, y: 250, name: "옥동중" },
+                  { x: 220, y: 230, name: "울산중앙중" },
+                  { x: 340, y: 245, name: "문수중" },
+                  { x: 155, y: 290, name: "울산서여중" },
+                  { x: 270, y: 300, name: "야음중" },
+                  { x: 85, y: 340, name: "옥현중" },
+                  { x: 200, y: 345, name: "삼호중" },
+                  { x: 310, y: 350, name: "대현중" },
+                  { x: 165, y: 380, name: "무거중" },
+                ].map((s, i) => (
+                  <g key={s.name}>
+                    <circle cx={s.x} cy={s.y} r="16" fill="rgba(99,102,241,0.15)" className="animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+                    <circle cx={s.x} cy={s.y} r="5" fill="#818cf8" />
+                    <text x={s.x} y={s.y - 22} textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="600">{s.name}</text>
+                  </g>
+                ))}
+                {/* 연결선 — 학교 간 네트워크 */}
+                {[
+                  [120,70,190,110], [190,110,260,55], [260,55,310,115], [310,115,285,180],
+                  [285,180,340,245], [340,245,310,350], [310,350,270,300], [270,300,200,345],
+                  [200,345,165,380], [165,380,85,340], [85,340,95,250], [95,250,80,145],
+                  [80,145,120,70], [145,185,220,230], [220,230,155,290], [190,110,145,185],
+                  [285,180,220,230], [155,290,200,345],
+                ].map(([x1,y1,x2,y2], i) => (
+                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(129,140,248,0.12)" strokeWidth="1" />
+                ))}
+              </svg>
+            </div>
           </div>
 
-          <div className="space-y-4 md:space-y-6">
-            {[
-              {
-                icon: Shield,
-                title: "안전한 학교 커뮤니티",
-                desc: "AI 기반 콘텐츠 모더레이션으로 안전한 소통 환경을 보장합니다. 학교별 권한 관리로 신뢰할 수 있는 커뮤니티를 만듭니다.",
-                color: "text-indigo-400",
-                bg: "bg-indigo-500/10",
-              },
-              {
-                icon: Globe,
-                title: "16개 학교가 하나로",
-                desc: "울산 남구의 모든 중학교가 하나의 플랫폼에서 소통합니다. 학교 간 벽을 넘어 함께 배우고 성장하세요.",
-                color: "text-emerald-400",
-                bg: "bg-emerald-500/10",
-              },
-              {
-                icon: Sparkles,
-                title: "AI 기반 스마트 기능",
-                desc: "AI가 공지문 작성을 돕고, 콘텐츠를 자동으로 검토합니다. 더 효율적이고 안전한 커뮤니티 운영이 가능합니다.",
-                color: "text-amber-400",
-                bg: "bg-amber-500/10",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="flex gap-5 bg-slate-800/30 border border-slate-700/40 rounded-2xl p-6 hover:bg-slate-800/60 transition-all"
-              >
-                <div
-                  className={`w-12 h-12 ${item.bg} rounded-xl flex items-center justify-center flex-shrink-0`}
-                >
-                  <item.icon size={24} className={item.color} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold mb-1">{item.title}</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    {item.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
+          {/* 텍스트 */}
+          <div className="w-full md:w-1/2 text-center md:text-left">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">16개 학교</span>가
+              <br />
+              하나로
+            </h2>
+            <p className="text-lg md:text-xl text-slate-400 mt-6 leading-relaxed">
+              울산 남구의 모든 중학교가<br />
+              하나의 플랫폼에서 소통합니다.
+            </p>
           </div>
         </div>
       </section>
