@@ -182,18 +182,39 @@ function CalendarContent() {
                 <p className="text-sm text-slate-400">이 날짜에 일정이 없습니다.</p>
               ) : (
                 <div className="space-y-2">
-                  {selectedEvents.map((e) => (
-                    <div key={e.id} className="flex items-start justify-between bg-slate-50 rounded-lg p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-700">{e.title}</p>
-                        {e.description && <p className="text-xs text-slate-500 mt-0.5">{e.description}</p>}
-                        <p className="text-xs text-slate-400 mt-1">{e.author_school.replace("중학교", "중")} · {e.author_role}</p>
+                  {(() => {
+                    // 같은 제목 그룹핑
+                    const grouped: { title: string; description?: string; schools: string[]; events: typeof selectedEvents }[] = [];
+                    selectedEvents.forEach((e) => {
+                      const existing = grouped.find((g) => g.title === e.title);
+                      if (existing) {
+                        if (!existing.schools.includes(e.author_school)) existing.schools.push(e.author_school);
+                        existing.events.push(e);
+                      } else {
+                        grouped.push({ title: e.title, description: e.description, schools: [e.author_school], events: [e] });
+                      }
+                    });
+                    return grouped.map((g) => (
+                      <div key={g.title} className="bg-slate-50 rounded-lg p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-700">{g.title}</p>
+                            {g.description && <p className="text-xs text-slate-500 mt-0.5">{g.description}</p>}
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {g.schools.map((s) => (
+                                <span key={s} className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">
+                                  {s.replace("중학교", "중")}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          {g.events.some((e) => user?.id === e.author_id) && (
+                            <button onClick={() => handleDelete(g.events.find((e) => user?.id === e.author_id)!.id)} className="text-slate-400 hover:text-red-500 p-2 shrink-0"><Trash2 size={14} /></button>
+                          )}
+                        </div>
                       </div>
-                      {user?.id === e.author_id && (
-                        <button onClick={() => handleDelete(e.id)} className="text-slate-400 hover:text-red-500 p-2 shrink-0"><Trash2 size={14} /></button>
-                      )}
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               )}
             </div>
