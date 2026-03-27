@@ -224,9 +224,23 @@ export async function fetchPolls(): Promise<Poll[]> {
 }
 
 export async function createPoll(poll: Omit<Poll, "id" | "created_at" | "votes">): Promise<boolean> {
-  const { error } = await supabase.from("polls").insert({ ...poll, votes: {} });
-  if (error) console.error("[createPoll]", error.message);
-  return !error;
+  // DB에 allow_other 컬럼이 없을 수 있으므로 분리 처리
+  const { allow_other, ...rest } = poll;
+  const payload: Record<string, unknown> = { ...rest, votes: {} };
+  if (allow_other) payload.allow_other = true;
+  const { error } = await supabase.from("polls").insert(payload);
+  if (error) {
+    // allow_other 컬럼 없으면 제거 후 재시도
+    if (error.message.includes("allow_other") || error.message.includes("schema")) {
+      delete payload.allow_other;
+      const { error: retryError } = await supabase.from("polls").insert(payload);
+      if (retryError) { console.error("[createPoll] retry:", retryError.message); return false; }
+      return true;
+    }
+    console.error("[createPoll]", error.message);
+    return false;
+  }
+  return true;
 }
 
 export async function deletePoll(id: string): Promise<boolean> {
