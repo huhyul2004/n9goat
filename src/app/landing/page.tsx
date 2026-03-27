@@ -169,6 +169,29 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 16개 학교가 하나로 + 남구 지도 */}
+      <section className="px-6 py-16 md:py-24">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-16">
+          {/* 지도 */}
+          <div className="w-full md:w-1/2 flex-shrink-0">
+            <SchoolMap className="border border-slate-700/40 shadow-lg shadow-indigo-500/10" />
+          </div>
+
+          {/* 텍스트 */}
+          <div className="w-full md:w-1/2 text-center md:text-left">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
+              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">16개 학교</span>가
+              <br />
+              하나로
+            </h2>
+            <p className="text-lg md:text-xl text-slate-400 mt-6 leading-relaxed">
+              울산 남구의 모든 중학교가<br />
+              하나의 플랫폼에서 소통합니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section className="px-6 py-16 md:py-20">
         <div className="max-w-5xl mx-auto">
@@ -198,29 +221,6 @@ export default function LandingPage() {
                 </p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 16개 학교가 하나로 + 남구 지도 */}
-      <section className="px-6 py-16 md:py-24">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-16">
-          {/* 지도 */}
-          <div className="w-full md:w-1/2 flex-shrink-0">
-            <SchoolMap className="border border-slate-700/40 shadow-lg shadow-indigo-500/10" />
-          </div>
-
-          {/* 텍스트 */}
-          <div className="w-full md:w-1/2 text-center md:text-left">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">16개 학교</span>가
-              <br />
-              하나로
-            </h2>
-            <p className="text-lg md:text-xl text-slate-400 mt-6 leading-relaxed">
-              울산 남구의 모든 중학교가<br />
-              하나의 플랫폼에서 소통합니다.
-            </p>
           </div>
         </div>
       </section>
