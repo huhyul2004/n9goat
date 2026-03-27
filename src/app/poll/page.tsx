@@ -36,9 +36,11 @@ function PollContent() {
     if (!user || !newTitle.trim()) return;
     const opts = newOptions.filter((o) => o.trim());
     if (opts.length < 2) { toast.add("선택지를 2개 이상 입력하세요", "error"); return; }
+    // 기타 허용 시 "기타+" 선택지 자동 추가
+    const finalOpts = allowOther ? [...opts, "기타+"] : opts;
     await createPoll({
       title: newTitle.trim(),
-      options: opts,
+      options: finalOpts,
       allow_other: allowOther,
       author_school: user.school,
       author_role: user.role,
@@ -201,9 +203,55 @@ function PollContent() {
                     </div>
                     <div className="space-y-2">
                       {poll.options.map((opt) => {
+                        const isOtherBtn = opt === "기타+";
                         const count = optionVotes[opt] || 0;
                         const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                         const isMyVote = myVote === opt;
+
+                        // "기타+" 버튼: 클릭 시 입력창 오픈
+                        if (isOtherBtn && !hasVoted) {
+                          return otherOpen[poll.id] ? (
+                            <div key={opt} className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="직접 입력하세요"
+                                value={otherInputs[poll.id] || ""}
+                                onChange={(e) => setOtherInputs((prev) => ({ ...prev, [poll.id]: e.target.value }))}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleOtherSubmit(poll.id); }}
+                                className="flex-1 p-2.5 bg-slate-50 border border-indigo-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleOtherSubmit(poll.id)}
+                                disabled={!otherInputs[poll.id]?.trim()}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-xl text-sm font-medium disabled:bg-slate-300 transition"
+                              >
+                                추가
+                              </button>
+                              <button
+                                onClick={() => setOtherOpen((prev) => ({ ...prev, [poll.id]: false }))}
+                                className="text-slate-400 hover:text-slate-600 px-1"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              key={opt}
+                              onClick={() => setOtherOpen((prev) => ({ ...prev, [poll.id]: true }))}
+                              className="w-full rounded-xl border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 transition text-left"
+                            >
+                              <div className="flex items-center gap-2 px-4 py-2.5">
+                                <PenLine size={14} className="text-slate-400" />
+                                <span className="text-sm text-slate-400">기타+ (직접 입력)</span>
+                              </div>
+                            </button>
+                          );
+                        }
+
+                        // "기타+" 버튼은 투표 후엔 숨김 (0표면)
+                        if (isOtherBtn && hasVoted && count === 0) return null;
+
                         return (
                           <button
                             key={opt}
@@ -225,48 +273,6 @@ function PollContent() {
                           </button>
                         );
                       })}
-
-                      {/* 기타 항목 */}
-                      {poll.allow_other && !hasVoted && (
-                        <>
-                          {otherOpen[poll.id] ? (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="직접 입력하세요"
-                                value={otherInputs[poll.id] || ""}
-                                onChange={(e) => setOtherInputs((prev) => ({ ...prev, [poll.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === "Enter") handleOtherSubmit(poll.id); }}
-                                className="flex-1 p-2.5 bg-slate-50 border border-indigo-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() => handleOtherSubmit(poll.id)}
-                                disabled={!otherInputs[poll.id]?.trim()}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-xl text-sm font-medium disabled:bg-slate-300 transition"
-                              >
-                                투표
-                              </button>
-                              <button
-                                onClick={() => setOtherOpen((prev) => ({ ...prev, [poll.id]: false }))}
-                                className="text-slate-400 hover:text-slate-600 px-1"
-                              >
-                                <X size={18} />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setOtherOpen((prev) => ({ ...prev, [poll.id]: true }))}
-                              className="w-full rounded-xl border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 transition text-left"
-                            >
-                              <div className="flex items-center gap-2 px-4 py-2.5">
-                                <PenLine size={14} className="text-slate-400" />
-                                <span className="text-sm text-slate-400">기타 (직접 입력)</span>
-                              </div>
-                            </button>
-                          )}
-                        </>
-                      )}
                     </div>
                   </div>
                 );
