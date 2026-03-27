@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/useAuth";
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   MessageSquare,
   Mail,
@@ -17,6 +18,8 @@ import {
   Zap,
   Globe,
 } from "lucide-react";
+
+const SchoolMap = dynamic(() => import("@/components/SchoolMap"), { ssr: false });
 
 export default function LandingPage() {
   const { user, initialized, init } = useAuth();
@@ -204,52 +207,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-16">
           {/* 지도 */}
           <div className="w-full md:w-1/2 flex-shrink-0">
-            <div className="relative bg-slate-800/40 border border-slate-700/40 rounded-3xl p-6 md:p-8">
-              <p className="text-[10px] text-slate-500 font-medium mb-3 tracking-wider uppercase">울산광역시 남구</p>
-              <svg viewBox="0 0 400 420" className="w-full" xmlns="http://www.w3.org/2000/svg">
-                {/* 남구 영역 */}
-                <path d="M60,80 L140,30 L260,20 L340,60 L370,140 L380,240 L350,320 L300,370 L200,400 L100,380 L40,320 L20,220 L30,140 Z" fill="rgba(99,102,241,0.08)" stroke="rgba(99,102,241,0.25)" strokeWidth="1.5" />
-                {/* 도로 */}
-                <line x1="60" y1="200" x2="380" y2="200" stroke="rgba(148,163,184,0.1)" strokeWidth="2" strokeDasharray="6,4" />
-                <line x1="200" y1="20" x2="200" y2="400" stroke="rgba(148,163,184,0.1)" strokeWidth="2" strokeDasharray="6,4" />
-                <line x1="80" y1="100" x2="350" y2="340" stroke="rgba(148,163,184,0.06)" strokeWidth="1.5" strokeDasharray="4,4" />
-                {/* 학교 핀 */}
-                {[
-                  { x: 120, y: 70, name: "신정중" },
-                  { x: 260, y: 55, name: "신일중" },
-                  { x: 80, y: 145, name: "학성중" },
-                  { x: 190, y: 110, name: "월평중" },
-                  { x: 310, y: 115, name: "동평중" },
-                  { x: 145, y: 185, name: "태화중" },
-                  { x: 285, y: 180, name: "울산강남중" },
-                  { x: 95, y: 250, name: "옥동중" },
-                  { x: 220, y: 230, name: "울산중앙중" },
-                  { x: 340, y: 245, name: "문수중" },
-                  { x: 155, y: 290, name: "울산서여중" },
-                  { x: 270, y: 300, name: "야음중" },
-                  { x: 85, y: 340, name: "옥현중" },
-                  { x: 200, y: 345, name: "삼호중" },
-                  { x: 310, y: 350, name: "대현중" },
-                  { x: 165, y: 380, name: "무거중" },
-                ].map((s, i) => (
-                  <g key={s.name}>
-                    <circle cx={s.x} cy={s.y} r="16" fill="rgba(99,102,241,0.15)" className="animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-                    <circle cx={s.x} cy={s.y} r="5" fill="#818cf8" />
-                    <text x={s.x} y={s.y - 22} textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="600">{s.name}</text>
-                  </g>
-                ))}
-                {/* 연결선 — 학교 간 네트워크 */}
-                {[
-                  [120,70,190,110], [190,110,260,55], [260,55,310,115], [310,115,285,180],
-                  [285,180,340,245], [340,245,310,350], [310,350,270,300], [270,300,200,345],
-                  [200,345,165,380], [165,380,85,340], [85,340,95,250], [95,250,80,145],
-                  [80,145,120,70], [145,185,220,230], [220,230,155,290], [190,110,145,185],
-                  [285,180,220,230], [155,290,200,345],
-                ].map(([x1,y1,x2,y2], i) => (
-                  <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(129,140,248,0.12)" strokeWidth="1" />
-                ))}
-              </svg>
-            </div>
+            <SchoolMap className="border border-slate-700/40 shadow-lg shadow-indigo-500/10" />
           </div>
 
           {/* 텍스트 */}
