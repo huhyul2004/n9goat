@@ -255,6 +255,15 @@ export async function cancelVote(pollId: string, userId: string): Promise<boolea
   return !error;
 }
 
+export async function addPollOption(pollId: string, newOption: string): Promise<boolean> {
+  const { data } = await supabase.from("polls").select("options").eq("id", pollId).single();
+  if (!data) return false;
+  const options = [...(data.options || []), newOption];
+  const { error } = await supabase.from("polls").update({ options }).eq("id", pollId);
+  if (error) console.error("[addPollOption]", error.message);
+  return !error;
+}
+
 // ===================== PROFILE HELPERS =====================
 
 export async function getMyPosts(userId: string): Promise<Post[]> {

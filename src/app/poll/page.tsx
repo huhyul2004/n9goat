@@ -5,11 +5,11 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
-import { fetchPolls, createPoll, votePoll, cancelVote, deletePoll } from "@/lib/db";
+import { fetchPolls, createPoll, votePoll, cancelVote, deletePoll, addPollOption } from "@/lib/db";
 import type { Poll } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
-import { BarChart3, Plus, X, Check, Trash2 } from "lucide-react";
+import { BarChart3, Plus, X, Check, Trash2, PenLine } from "lucide-react";
 
 function PollContent() {
   const { user } = useAuth();
@@ -19,6 +19,10 @@ function PollContent() {
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newOptions, setNewOptions] = useState(["", ""]);
+  const [allowOther, setAllowOther] = useState(false);
+  // 기타 입력 상태: pollId -> 입력값
+  const [otherInputs, setOtherInputs] = useState<Record<string, string>>({});
+  const [otherOpen, setOtherOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => { load(); }, []);
 
@@ -35,11 +39,12 @@ function PollContent() {
     await createPoll({
       title: newTitle.trim(),
       options: opts,
+      allow_other: allowOther,
       author_school: user.school,
       author_role: user.role,
       author_id: user.id,
     });
-    setNewTitle(""); setNewOptions(["", ""]); setShowCreate(false);
+    setNewTitle(""); setNewOptions(["", ""]); setAllowOther(false); setShowCreate(false);
     toast.add("투표가 생성되었습니다", "success");
     load();
   }
@@ -49,7 +54,6 @@ function PollContent() {
     const poll = polls.find((p) => p.id === pollId);
     const myVote = poll?.votes[user.id];
 
-    // 같은 옵션 다시 누르면 투표 취소
     if (myVote === option) {
       setPolls((prev) =>
         prev.map((p) => {
@@ -63,7 +67,6 @@ function PollContent() {
       return;
     }
 
-    // 즉시 로컬 상태 업데이트 (낙관적 UI)
     setPolls((prev) =>
       prev.map((p) => {
         if (p.id !== pollId) return p;
@@ -72,6 +75,31 @@ function PollContent() {
       })
     );
     await votePoll(pollId, user.id, option);
+  }
+
+  async function handleOtherSubmit(pollId: string) {
+    if (!user) return;
+    const text = otherInputs[pollId]?.trim();
+    if (!text) return;
+
+    // 로컬 상태에 옵션 추가 + 투표
+    setPolls((prev) =>
+      prev.map((p) => {
+        if (p.id !== pollId) return p;
+        const newOptions = p.options.includes(text) ? p.options : [...p.options, text];
+        const newVotes = { ...p.votes, [user.id]: text };
+        return { ...p, options: newOptions, votes: newVotes };
+      })
+    );
+    setOtherInputs((prev) => ({ ...prev, [pollId]: "" }));
+    setOtherOpen((prev) => ({ ...prev, [pollId]: false }));
+
+    // 서버에 옵션 추가 후 투표
+    const poll = polls.find((p) => p.id === pollId);
+    if (poll && !poll.options.includes(text)) {
+      await addPollOption(pollId, text);
+    }
+    await votePoll(pollId, user.id, text);
   }
 
   async function handleDeletePoll(pollId: string) {
@@ -123,7 +151,18 @@ function PollContent() {
                     </div>
                   ))}
                 </div>
-                <button onClick={addOption} className="text-xs text-indigo-600 hover:text-indigo-800 mb-4">+ 선택지 추가</button>
+                <div className="flex items-center justify-between mb-4">
+                  <button onClick={addOption} className="text-xs text-indigo-600 hover:text-indigo-800">+ 선택지 추가</button>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div
+                      onClick={() => setAllowOther(!allowOther)}
+                      className={`w-9 h-5 rounded-full transition-colors relative ${allowOther ? "bg-indigo-600" : "bg-slate-300"}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${allowOther ? "translate-x-4" : "translate-x-0.5"}`} />
+                    </div>
+                    <span className="text-xs text-slate-600 font-medium">기타 항목 허용</span>
+                  </label>
+                </div>
                 <div className="flex justify-end">
                   <button onClick={handleCreate} disabled={!newTitle.trim()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl text-sm font-medium disabled:bg-slate-300">만들기</button>
                 </div>
@@ -151,7 +190,10 @@ function PollContent() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-bold text-slate-800">{poll.title}</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">{poll.author_school} {poll.author_role} · {timeAgo(poll.created_at)} · {totalVotes}명 참여</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {poll.author_school} {poll.author_role} · {timeAgo(poll.created_at)} · {totalVotes}명 참여
+                          {poll.allow_other && <span className="ml-1.5 text-indigo-400">· 기타 허용</span>}
+                        </p>
                       </div>
                       {user?.id === poll.author_id && (
                         <button onClick={() => handleDeletePoll(poll.id)} className="text-slate-300 hover:text-red-500 transition p-1"><Trash2 size={16} /></button>
@@ -183,6 +225,48 @@ function PollContent() {
                           </button>
                         );
                       })}
+
+                      {/* 기타 항목 */}
+                      {poll.allow_other && !hasVoted && (
+                        <>
+                          {otherOpen[poll.id] ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="직접 입력하세요"
+                                value={otherInputs[poll.id] || ""}
+                                onChange={(e) => setOtherInputs((prev) => ({ ...prev, [poll.id]: e.target.value }))}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleOtherSubmit(poll.id); }}
+                                className="flex-1 p-2.5 bg-slate-50 border border-indigo-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleOtherSubmit(poll.id)}
+                                disabled={!otherInputs[poll.id]?.trim()}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-xl text-sm font-medium disabled:bg-slate-300 transition"
+                              >
+                                투표
+                              </button>
+                              <button
+                                onClick={() => setOtherOpen((prev) => ({ ...prev, [poll.id]: false }))}
+                                className="text-slate-400 hover:text-slate-600 px-1"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setOtherOpen((prev) => ({ ...prev, [poll.id]: true }))}
+                              className="w-full rounded-xl border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 transition text-left"
+                            >
+                              <div className="flex items-center gap-2 px-4 py-2.5">
+                                <PenLine size={14} className="text-slate-400" />
+                                <span className="text-sm text-slate-400">기타 (직접 입력)</span>
+                              </div>
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 );

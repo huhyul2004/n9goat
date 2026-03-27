@@ -77,6 +77,7 @@ export interface Poll {
   title: string;
   options: string[];
   votes: Record<string, string>; // author_id -> option
+  allow_other?: boolean; // 기타 항목 허용 여부
   author_school: string;
   author_role: string;
   author_id: string;
