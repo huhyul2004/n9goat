@@ -131,7 +131,9 @@ function CalendarContent() {
                 {w.map((d, di) => {
                   if (d === null) return <div key={di} className="h-12 md:h-16 bg-slate-50/50" />;
                   const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-                  const dayEvents = eventsForDate(d);
+                  const dayEventsRaw = eventsForDate(d);
+                  // 같은 제목 중복 제거
+                  const dayEvents = dayEventsRaw.filter((e, i, arr) => arr.findIndex((x) => x.title === e.title) === i);
                   const isToday = dateStr === today.toISOString().slice(0, 10);
                   const isSelected = dateStr === selectedDate;
                   return (
