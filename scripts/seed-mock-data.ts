@@ -110,8 +110,8 @@ for (let i = 0; i < 15; i++) {
   });
 }
 
-// 이번 주 공지 게시글 10개
-for (let i = 0; i < 10; i++) {
+// 이번 주 공지 게시글 5개
+for (let i = 0; i < 5; i++) {
   const u = makeUser(undefined, pick(["교장", "교감", "학생부장"]));
   const id = crypto.randomUUID();
   postIds.push(id);
@@ -134,7 +134,7 @@ for (let i = 0; i < 10; i++) {
   postIds.push(id);
   posts.push({
     id,
-    category: pick(["question", "announcement"]),
+    category: i < 5 ? "question" : "announcement",
     title: i < 5 ? `[지난주] ${POST_TITLES_Q[i]}` : `[지난주 공지] ${POST_TITLES_A[i - 5]}`,
     content: "지난주에 작성된 게시글입니다.",
     author_school: u.school,
