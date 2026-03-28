@@ -119,6 +119,9 @@ export default function Sidebar() {
     ...(showDashboard ? [{ href: "/dashboard", match: "dashboard", icon: LayoutDashboard, label: "Dashboard", badge: 0 }] : []),
   ];
 
+  // 모바일 하단 네비: 최대 5개만 표시 (Dashboard는 더보기로)
+  const MOBILE_NAV = NAV_ITEMS.slice(0, 5);
+
   const handleLogout = async () => {
     await logout();
     router.push("/login");
@@ -204,7 +207,7 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around z-50 p-1 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ paddingBottom: "max(4px, env(safe-area-inset-bottom))" }}>
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_NAV.map((item) => {
           const active = currentMatch === item.match;
           return (
             <button
@@ -264,6 +267,16 @@ export default function Sidebar() {
                 <User size={20} />
                 <span className="text-sm font-medium">내 프로필</span>
               </button>
+
+              {showDashboard && (
+                <button
+                  onClick={() => { router.push("/dashboard"); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 text-slate-700 transition-colors"
+                >
+                  <LayoutDashboard size={20} />
+                  <span className="text-sm font-medium">대시보드</span>
+                </button>
+              )}
 
               <button
                 onClick={() => { setWeeklyOpen(true); setMobileMenuOpen(false); }}
