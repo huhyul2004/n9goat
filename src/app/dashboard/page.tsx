@@ -70,7 +70,7 @@ function DashboardContent() {
 
   if (!user) {
     return (
-      <div className="flex h-screen bg-slate-50 text-slate-800">
+      <div className="flex h-screen h-[100dvh] bg-slate-50 text-slate-800">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -99,7 +99,7 @@ function DashboardContent() {
     .slice(0, 5);
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-800">
+    <div className="flex h-screen h-[100dvh] bg-slate-50 text-slate-800">
       <Sidebar />
       <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
         <div className="max-w-6xl mx-auto p-3 md:p-8">

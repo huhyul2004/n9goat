@@ -202,7 +202,7 @@ function ChatContent() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-800">
+    <div className="flex h-screen h-[100dvh] bg-slate-50 text-slate-800">
       <Sidebar />
       <main className="flex-1 flex flex-col pb-14 md:pb-0 min-w-0 overflow-hidden">
         {/* Room selector */}

@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/useAuth";
 import { getCredential, createCredential } from "@/lib/db";
-import { SCHOOLS, SCHOOL_LIST, ROLES } from "@/lib/constants";
+import { SCHOOLS, SCHOOL_LIST, SCHOOL_DISTRICTS, ROLES } from "@/lib/constants";
 import type { School, Role } from "@/lib/constants";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -130,7 +130,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+    <div className="min-h-screen min-h-[100dvh] flex relative overflow-hidden">
       {/* Left - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-between p-12">
         <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -143,11 +143,11 @@ export default function LoginPage() {
         <div className="relative z-10 space-y-8">
           <div>
             <h2 className="text-3xl font-bold text-white leading-tight">울산 남구<br />중학교 커뮤니티</h2>
-            <p className="text-slate-400 mt-4 text-lg leading-relaxed">16개 중학교가 하나로 연결됩니다.<br />질문하고, 소통하고, 함께 성장하세요.</p>
+            <p className="text-slate-400 mt-4 text-lg leading-relaxed">울산 중학교가 하나로 연결됩니다.<br />질문하고, 소통하고, 함께 성장하세요.</p>
           </div>
           <div className="flex gap-6">
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 flex-1">
-              <p className="text-3xl font-black text-indigo-400">16</p>
+              <p className="text-3xl font-black text-indigo-400">44</p>
               <p className="text-sm text-slate-400 mt-1">참여 학교</p>
             </div>
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 flex-1">
@@ -164,18 +164,18 @@ export default function LoginPage() {
       </div>
 
       {/* Right - Login Form */}
-      <div className="flex-1 flex items-center justify-center bg-white p-6">
+      <div className="flex-1 flex items-center justify-center bg-white p-4 md:p-6 overflow-y-auto">
         <div className="w-full max-w-md">
           {/* Mobile branding */}
           <div className="lg:hidden mb-8">
             <div className="text-center mb-6">
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">N9</h1>
               <div className="w-10 h-1 bg-indigo-500 mt-3 rounded-full mx-auto" />
-              <p className="text-slate-500 mt-3 text-sm leading-relaxed">울산 남구 중학교 커뮤니티<br />16개 중학교가 하나로 연결됩니다.</p>
+              <p className="text-slate-500 mt-3 text-sm leading-relaxed">울산 남구 중학교 커뮤니티<br />울산 중학교가 하나로 연결됩니다.</p>
             </div>
             <div className="flex gap-3">
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex-1 text-center">
-                <p className="text-xl font-black text-indigo-500">16</p>
+                <p className="text-xl font-black text-indigo-500">44</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">참여 학교</p>
               </div>
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex-1 text-center">
@@ -219,7 +219,11 @@ export default function LoginPage() {
                   onChange={(e) => setSchool(e.target.value as School)}
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all text-slate-900"
                 >
-                  {SCHOOL_LIST.map((s) => (<option key={s} value={s}>{s}</option>))}
+                  {Object.entries(SCHOOL_DISTRICTS).map(([district, schools]) => (
+                    <optgroup key={district} label={district}>
+                      {schools.map((s) => (<option key={s} value={s}>{s}</option>))}
+                    </optgroup>
+                  ))}
                 </select>
               )}
             </div>
