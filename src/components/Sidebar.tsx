@@ -20,6 +20,7 @@ import {
   Settings,
   X,
   Newspaper,
+  Heart,
 } from "lucide-react";
 
 function Badge({ count }: { count: number }) {
@@ -163,10 +164,24 @@ export default function Sidebar() {
             );
           })}
 
+          {/* 마음패드 버튼 */}
+          <button
+            onClick={() => router.push("/mindpad")}
+            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm font-medium mt-2 border-t border-slate-700/50 pt-4 ${
+              pathname.startsWith("/mindpad")
+                ? "text-rose-300 bg-rose-500/10"
+                : "text-slate-400 hover:text-rose-300 hover:bg-rose-500/10"
+            }`}
+          >
+            <Heart size={20} />
+            <span className="flex-1 text-left">마음패드</span>
+            <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full font-bold">NEW</span>
+          </button>
+
           {/* 주간 브리핑 버튼 */}
           <button
             onClick={() => setWeeklyOpen(true)}
-            className="flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm text-slate-400 hover:text-white hover:bg-slate-800 font-medium mt-2 border-t border-slate-700/50 pt-4"
+            className="flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm text-slate-400 hover:text-white hover:bg-slate-800 font-medium"
           >
             <Newspaper size={20} />
             <span className="flex-1 text-left">주간 브리핑</span>
@@ -263,6 +278,15 @@ export default function Sidebar() {
               >
                 <User size={20} />
                 <span className="text-sm font-medium">내 프로필</span>
+              </button>
+
+              <button
+                onClick={() => { router.push("/mindpad"); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-rose-50 text-slate-700 transition-colors"
+              >
+                <Heart size={20} className="text-rose-500" />
+                <span className="text-sm font-medium flex-1 text-left">마음패드</span>
+                <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold">NEW</span>
               </button>
 
               <button

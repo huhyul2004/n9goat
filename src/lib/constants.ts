@@ -78,3 +78,14 @@ export const DELETE_ROLES: string[] = ["교육감", "교장", "개발자"];
 
 export type School = (typeof SCHOOLS)[number];
 export type Role = (typeof ROLES)[number];
+
+// 직책별 권한 설명
+export const ROLE_PERMISSIONS: Record<string, string> = {
+  "교육감": "모든 학교 열람, 공지 작성, 게시글 삭제, 전체 채팅방 접근, 대시보드 열람",
+  "교장": "공지 작성, 게시글 삭제, 대시보드 열람",
+  "교감": "공지 작성, 대시보드 열람",
+  "개발자": "모든 학교 열람, 공지 작성, 게시글 삭제, 관리자 기능, 대시보드 열람",
+  "학생부장": "대시보드 열람, 질문/답변, 투표, 채팅",
+  "선생님": "대시보드 열람, 질문/답변, 투표, 채팅",
+  "학생회": "대시보드 열람, 질문/답변, 투표, 채팅",
+};

@@ -17,6 +17,7 @@ import {
   School,
   Zap,
   Globe,
+  Heart,
 } from "lucide-react";
 
 const SchoolMap = dynamic(() => import("@/components/SchoolMap"), { ssr: false });
@@ -95,7 +96,7 @@ export default function LandingPage() {
   ];
 
   const highlights = [
-    { icon: School, value: "16", label: "참여 학교", color: "text-indigo-400" },
+    { icon: School, value: "44", label: "참여 학교", color: "text-indigo-400" },
     { icon: Users, value: "7", label: "직책 지원", color: "text-emerald-400" },
     { icon: Zap, value: "실시간", label: "소통 가능", color: "text-amber-400" },
     { icon: Globe, value: "남구", label: "교육 네트워크", color: "text-rose-400" },
@@ -132,7 +133,7 @@ export default function LandingPage() {
             울산 남구 중학교 커뮤니티
           </p>
           <p className="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto">
-            16개 중학교가 하나로 연결됩니다.
+            울산 중학교가 하나로 연결됩니다.
             <br />
             질문하고, 소통하고, 함께 성장하세요.
           </p>
@@ -169,7 +170,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 16개 학교가 하나로 + 남구 지도 */}
+      {/* 44개 학교가 하나로 + 남구 지도 */}
       <section className="px-6 py-16 md:py-24">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-10 md:gap-16">
           {/* 지도 */}
@@ -180,7 +181,7 @@ export default function LandingPage() {
           {/* 텍스트 */}
           <div className="w-full md:w-1/2 text-center md:text-left">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight">
-              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">16개 학교</span>가
+              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">44개 학교</span>가
               <br />
               하나로
             </h2>
@@ -221,6 +222,100 @@ export default function LandingPage() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 건강한 소통 섹션 */}
+      <section className="px-6 py-16 md:py-24">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-black mb-4">
+              왜 <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">N9</span>으로 소통해야 할까요?
+            </h2>
+            <p className="text-slate-400 text-lg">
+              건강한 소통은 올바른 도구에서 시작됩니다
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex gap-5 bg-slate-800/30 border border-slate-700/40 rounded-2xl p-6">
+              <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Shield size={24} className="text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-1">실명 기반의 책임 있는 발언</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  소속과 직책이 명시되어 무분별한 비방이나 허위 정보가 줄어듭니다. 누가 어떤 입장에서 말하는지 투명하게 알 수 있어 신뢰를 기반으로 소통할 수 있습니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-5 bg-slate-800/30 border border-slate-700/40 rounded-2xl p-6">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Users size={24} className="text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-1">학교 간 벽을 허물다</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  같은 지역에 있으면서도 서로 모르고 지내던 학교들이 하나의 공간에서 만납니다. 다른 학교의 좋은 사례를 배우고, 함께 고민을 나누며, 연합 행사를 더 쉽게 기획할 수 있습니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-5 bg-slate-800/30 border border-slate-700/40 rounded-2xl p-6">
+              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Sparkles size={24} className="text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-1">AI가 지키는 안전한 대화</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  AI 모더레이션이 부적절한 콘텐츠를 자동으로 감지하고, 주간 브리핑으로 놓친 이슈를 빠르게 파악할 수 있습니다. 기술이 건강한 소통 문화를 뒷받침합니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-5 bg-slate-800/30 border border-slate-700/40 rounded-2xl p-6">
+              <div className="w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Globe size={24} className="text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-1">카톡 대신 N9인 이유</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  카카오톡 단체방은 메시지가 쏟아져 중요한 내용이 묻히고, 누가 읽었는지 부담이 됩니다. N9은 주제별로 정리된 게시판, 투표, 일정 관리를 제공해 필요한 정보를 놓치지 않으면서도 각자의 속도로 참여할 수 있습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 마음패드 */}
+      <section className="px-6 py-16 md:py-24">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="relative bg-gradient-to-br from-rose-500/10 via-pink-500/10 to-orange-500/10 border border-rose-500/20 rounded-3xl p-10 md:p-14 overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-rose-500/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="relative z-10">
+              <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Heart size={32} className="text-rose-400" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-black mb-4">
+                <span className="bg-gradient-to-r from-rose-400 to-orange-400 bg-clip-text text-transparent">마음패드</span>
+              </h2>
+              <p className="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto mb-8">
+                학교폭력 제보와 고민 상담을 위한 익명 디지털 소통 창구.
+                <br />
+                방치된 물리적 우체통 대신, 언제 어디서든 안전하게 마음을 전하세요.
+              </p>
+              <button
+                onClick={() => router.push("/mindpad")}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-bold py-3.5 px-8 rounded-full shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 transition-all hover:scale-105 active:scale-95"
+              >
+                <Heart size={18} />
+                <span>마음패드 체험해보기</span>
+                <ArrowRight size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </section>
