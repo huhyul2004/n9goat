@@ -282,11 +282,11 @@ function BoardContent() {
 
     return (
       <div key={post.id} id={`post-${post.id}`} className={`bg-white rounded-2xl overflow-hidden transition-all hover:shadow-md ${isAnnouncement ? "border-2 border-amber-300/60 shadow-amber-100/50" : "border border-slate-100 shadow-sm"}`}>
-        <div className="p-5">
-          <div className="flex items-start gap-4">
+        <div className="p-3 md:p-5">
+          <div className="flex items-start gap-3 md:gap-4">
             {post.is_anonymous ? (
-              <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold flex-shrink-0">
-                <EyeOff size={22} />
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold flex-shrink-0">
+                <EyeOff size={18} />
               </div>
             ) : (
               <ProfileTooltip authorSchool={post.author_school} authorRole={post.author_role} authorId={post.author_id} />
