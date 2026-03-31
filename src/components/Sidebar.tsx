@@ -8,6 +8,7 @@ import { getUnreadMailCount, getNewCommentCountOnMyPosts, markCommentsSeen } fro
 import { ANNOUNCEMENT_ROLES } from "@/lib/constants";
 import { useSettings } from "@/store/useSettings";
 import WeeklySummary from "./WeeklySummary";
+import { AdBannerSidebar } from "./AdBanner";
 import {
   MessageSquare,
   Mail,
@@ -191,6 +192,8 @@ export default function Sidebar() {
             <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">AI</span>
           </button>
         </div>
+
+        <AdBannerSidebar />
 
         <div className="mt-auto pt-4 pb-4 px-3 border-t border-slate-700/50">
           <button

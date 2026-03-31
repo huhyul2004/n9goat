@@ -14,6 +14,7 @@ import { useAuth } from "@/store/useAuth";
 import { useToast } from "@/store/useToast";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
+import { AdBannerBoard } from "@/components/AdBanner";
 import ProfileTooltip from "@/components/ProfileTooltip";
 import {
   Search, PenSquare, X, MessageCircle, Send, ChevronDown, ChevronUp,
@@ -446,6 +447,9 @@ function BoardContent() {
               </button>
             </div>
           </div>
+
+          {/* 광고 배너 */}
+          <AdBannerBoard />
 
           {/* Sort/Filter + Announcement button */}
           <div className="flex items-center gap-2 mb-5 flex-wrap">
