@@ -22,6 +22,7 @@ import {
   X,
   Newspaper,
   Heart,
+  ClipboardList,
 } from "lucide-react";
 
 function Badge({ count }: { count: number }) {
@@ -96,6 +97,9 @@ export default function Sidebar() {
   const DASHBOARD_ROLES = ["교육감", "교장", "교감", "개발자", "학생부장", "선생님", "학생회"];
   const showDashboard = user && DASHBOARD_ROLES.includes(user.role);
 
+  // 설문연구: 연구자/관리자는 대시보드로, 일반 사용자는 응답 페이지로
+  const surveyHref = showDashboard ? "/survey-study/dashboard" : "/survey-study";
+
   const currentMatch = pathname.startsWith("/dashboard")
     ? "dashboard"
     : pathname.startsWith("/mail")
@@ -167,6 +171,20 @@ export default function Sidebar() {
               </button>
             );
           })}
+
+          {/* 설문연구 버튼 (수학·정보 탐구 프로젝트) */}
+          <button
+            onClick={() => router.push(surveyHref)}
+            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm ${
+              pathname.startsWith("/survey-study")
+                ? "text-white bg-indigo-600 font-bold shadow-lg shadow-indigo-600/20"
+                : "text-slate-400 hover:text-white hover:bg-slate-800 font-medium"
+            }`}
+          >
+            <ClipboardList size={20} />
+            <span className="flex-1 text-left">설문연구</span>
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">NEW</span>
+          </button>
 
           {/* 마음패드 버튼 */}
           <button
@@ -295,6 +313,15 @@ export default function Sidebar() {
                   <span className="text-sm font-medium">대시보드</span>
                 </button>
               )}
+
+              <button
+                onClick={() => { router.push(surveyHref); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 text-slate-700 transition-colors"
+              >
+                <ClipboardList size={20} className="text-emerald-600" />
+                <span className="text-sm font-medium flex-1 text-left">설문연구</span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">NEW</span>
+              </button>
 
               <button
                 onClick={() => { router.push("/mindpad"); setMobileMenuOpen(false); }}
