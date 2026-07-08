@@ -16,6 +16,7 @@ import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
 import { AdBannerBoard } from "@/components/AdBanner";
 import ProfileTooltip from "@/components/ProfileTooltip";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import {
   Search, PenSquare, X, MessageCircle, Send, ChevronDown, ChevronUp,
   User, MoreVertical, Pencil, Trash2, Megaphone, Paperclip, Sparkles, Pin, EyeOff,
@@ -47,6 +48,8 @@ function BoardContent() {
 
   // Edit post
   const [editingPost, setEditingPost] = useState<Post | null>(null);
+  // 글쓰기/글수정 모달 열리면 배경 스크롤 잠금
+  useBodyScrollLock(showWrite || editingPost !== null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
 

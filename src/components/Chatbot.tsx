@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { MessageCircle, X, Send, Bot, User } from "lucide-react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 interface Message {
   role: "user" | "assistant";
@@ -15,6 +16,9 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 챗봇(모바일 전체화면)이 열리면 배경 스크롤 잠금
+  useBodyScrollLock(isOpen);
 
   // Drag state
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
