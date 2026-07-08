@@ -7,6 +7,7 @@ import { useToast } from "@/store/useToast";
 import { getUnreadMailCount, getNewCommentCountOnMyPosts, markCommentsSeen } from "@/lib/db";
 import { ANNOUNCEMENT_ROLES } from "@/lib/constants";
 import { useSettings } from "@/store/useSettings";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import WeeklySummary from "./WeeklySummary";
 import { AdBannerSidebar } from "./AdBanner";
 import {
@@ -46,6 +47,9 @@ export default function Sidebar() {
   const prevMailCount = useRef(0);
   const prevCommentCount = useRef(0);
   const { avatar, init: initSettings } = useSettings();
+
+  // 모바일 설정 메뉴가 열리면 배경 스크롤 잠금 (뒤 게시글 스크롤 새는 것 방지)
+  useBodyScrollLock(mobileMenuOpen);
 
   useEffect(() => { initSettings(); }, [initSettings]);
 

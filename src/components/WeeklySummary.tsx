@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, TrendingUp, AlertCircle, Info, ChevronRight, BarChart3, Flame, Lightbulb, Loader2 } from "lucide-react";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 interface Highlight {
   title: string;
@@ -44,6 +45,9 @@ export default function WeeklySummary({ open, onClose }: { open: boolean; onClos
   const [data, setData] = useState<WeeklyData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // 주간 브리핑 팝업이 열리면 배경 스크롤 잠금
+  useBodyScrollLock(open);
 
   async function loadData() {
     setLoading(true);

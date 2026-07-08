@@ -13,6 +13,7 @@ import type { School, Role } from "@/lib/constants";
 import type { ChatMessage, ChatRoom } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import {
   Send, User, Hash, Paperclip, X, Trash2,
   ChevronLeft, ChevronRight, Plus, Users, LogOut, UserPlus, UserMinus, Settings,
@@ -47,6 +48,8 @@ function ChatContent() {
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [showRoomSettings, setShowRoomSettings] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  // 채팅 모달(방설정/방생성/초대) 열리면 배경 스크롤 잠금
+  useBodyScrollLock(showCreateRoom || showRoomSettings || showInviteModal);
   const [inviteMembers, setInviteMembers] = useState<string[]>([]);
   const [memberSearch, setMemberSearch] = useState("");
 
