@@ -90,15 +90,9 @@ export const GROUPS: Record<GroupKey, GroupConfig> = {
     rightLabel: "매우 그렇다",
     askReason: true,
   },
-  D: {
-    key: "D",
-    label: "D그룹 · 서술형(척도 없음)",
-    kind: "openText",
-    askReason: false, // 문항 자체가 서술형이므로 별도 이유 칸 없음
-  },
 };
 
-export const GROUP_KEYS: GroupKey[] = ["A", "B", "C", "D"];
+export const GROUP_KEYS: GroupKey[] = ["A", "B", "C"];
 
 /** 링크 하나로 배포 시 응답자가 알 수 없게 무작위 그룹 배정 */
 export function assignRandomGroup(): GroupKey {

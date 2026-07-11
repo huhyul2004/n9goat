@@ -16,7 +16,6 @@ const GROUP_COLOR: Record<GroupKey, string> = {
   A: "#6366f1", // indigo
   B: "#10b981", // emerald
   C: "#f59e0b", // amber
-  D: "#94a3b8", // slate (서술형)
 };
 
 // 정규화 비교/표준편차 차트에는 수치가 있는 A/B/C만 사용
@@ -195,7 +194,7 @@ export default function DashboardPage() {
       {/* 정규화 평균 비교 */}
       <Section
         title="① 그룹 간 평균 비교 (0~100 정규화)"
-        desc="척도 범위가 다르므로 A(1~5)·B(1~4)·C(0~100)를 모두 0~100으로 정규화한 평균입니다. D그룹은 척도가 없어 제외(N/A)."
+        desc="척도 범위가 다르므로 A(1~5)·B(1~4)·C(0~100)를 모두 0~100으로 정규화한 평균입니다."
       >
         <GroupedBarChart
           categories={categories}
@@ -266,9 +265,7 @@ export default function DashboardPage() {
                             <td className="py-2 pr-3">{fmt(c.rawStd)}</td>
                             <td className="py-2 pr-3">{fmt(c.rawVar)}</td>
                             <td className="py-2 pr-3">
-                              {g === "D" ? (
-                                <span className="text-slate-400">척도 없음</span>
-                              ) : g === "B" ? (
+                              {g === "B" ? (
                                 <span title={c.centralNote}>
                                   <span className="text-slate-400">
                                     정의 안 됨
@@ -305,7 +302,7 @@ export default function DashboardPage() {
       {/* 키워드 빈도 */}
       <Section
         title="④ 이유·서술 텍스트 키워드 빈도"
-        desc="A/B/C 그룹의 '이유' 서술과 D그룹의 서술형 응답에서 자주 등장한 단어입니다. 정량(점수)과 정성(이유)을 비교하는 데 사용합니다."
+        desc="A/B/C 그룹의 '이유' 서술에서 자주 등장한 단어입니다. 정량(점수)과 정성(이유)을 비교하는 데 사용합니다."
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {keywordsByGroup &&
