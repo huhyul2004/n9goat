@@ -38,8 +38,8 @@ export interface Aggregate {
 }
 
 export function computeAggregate(sessions: SessionWithResponses[]): Aggregate {
-  const groupCounts = { A: 0, B: 0, C: 0, D: 0 } as Record<GroupKey, number>;
-  const groupTotals = { A: 0, B: 0, C: 0, D: 0 } as Record<GroupKey, number>;
+  const groupCounts = { A: 0, B: 0, C: 0 } as Record<GroupKey, number>;
+  const groupTotals = { A: 0, B: 0, C: 0 } as Record<GroupKey, number>;
   let completedSessions = 0;
 
   for (const s of sessions) {

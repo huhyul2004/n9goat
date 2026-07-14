@@ -1,7 +1,7 @@
 // survey-study 전용 타입 (N9 기존 코드와 완전히 독립)
 
 /** 응답 방식 그룹 */
-export type GroupKey = "A" | "B" | "C" | "D";
+export type GroupKey = "A" | "B" | "C";
 
 /** 문항 정의 */
 export interface Question {

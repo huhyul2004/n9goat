@@ -108,9 +108,8 @@ export function centralTendency(
         note: "40~60 구간 응답 비율",
       };
     }
-    case "D":
     default:
-      return { index: null, reference: null, note: "척도 없음" };
+      return { index: null, reference: null, note: "-" };
   }
 }
 
@@ -133,7 +132,6 @@ export function normalizeToPercent(
       return ((value - 1) / 3) * 100;
     case "C":
       return value;
-    case "D":
     default:
       return null;
   }
