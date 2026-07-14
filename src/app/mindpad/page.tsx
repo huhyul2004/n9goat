@@ -35,7 +35,7 @@ export default function MindpadIntroPage() {
 
   if (!initialized || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-slate-900">
         <div className="w-6 h-6 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -87,7 +87,7 @@ export default function MindpadIntroPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white overflow-y-auto">
+    <div className="min-h-screen min-h-[100dvh] bg-slate-900 text-white overflow-y-auto">
       {/* Back button */}
       <div className="fixed top-4 left-4 z-50">
         <button

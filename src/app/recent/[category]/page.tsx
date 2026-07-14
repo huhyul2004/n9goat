@@ -105,7 +105,7 @@ function RecentContent({ category }: { category: Category }) {
   const Icon = meta.icon;
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <main className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-slate-950">
       {/* 상단 바 */}
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <button
@@ -165,7 +165,7 @@ export default function RecentCategoryPage({
 
   if (!cat) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-slate-400">
+      <main className="flex min-h-screen min-h-[100dvh] items-center justify-center text-slate-400">
         알 수 없는 카테고리입니다.
       </main>
     );
