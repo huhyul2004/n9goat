@@ -5,7 +5,15 @@
       "Bash(yes \"\")",
       "Bash(cp -r /Users/huhchan/n9-community/* /Users/huhchan/n9-community/.* /Users/huhchan/엔나인/)",
       "Bash(rm -rf /Users/huhchan/n9-community)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Read(//Users/huhyul0524/Desktop/mindpad/**)",
+      "Read(//Users/huhyul0524/Desktop/**)",
+      "Bash(grep -E \"^/Users/huhyul0524/Desktop/mindpad/[^/]+\\(/[^/]+\\)?$\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)",
+      "Bash(git pull:*)"
     ]
   }
 }

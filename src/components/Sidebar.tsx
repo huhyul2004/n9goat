@@ -8,6 +8,7 @@ import { getUnreadMailCount, getNewCommentCountOnMyPosts, markCommentsSeen } fro
 import { ANNOUNCEMENT_ROLES } from "@/lib/constants";
 import { useSettings } from "@/store/useSettings";
 import WeeklySummary from "./WeeklySummary";
+import { AdBannerSidebar } from "./AdBanner";
 import {
   MessageSquare,
   Mail,
@@ -20,6 +21,7 @@ import {
   Settings,
   X,
   Newspaper,
+  Heart,
   ClipboardList,
 } from "lucide-react";
 
@@ -123,6 +125,9 @@ export default function Sidebar() {
     ...(showDashboard ? [{ href: "/dashboard", match: "dashboard", icon: LayoutDashboard, label: "Dashboard", badge: 0 }] : []),
   ];
 
+  // 모바일 하단 네비: 최대 5개만 표시 (Dashboard는 더보기로)
+  const MOBILE_NAV = NAV_ITEMS.slice(0, 5);
+
   const handleLogout = async () => {
     await logout();
     router.push("/login");
@@ -167,7 +172,7 @@ export default function Sidebar() {
             );
           })}
 
-          {/* 설문연구 (수학·정보 탐구 프로젝트) */}
+          {/* 설문연구 버튼 (수학·정보 탐구 프로젝트) */}
           <button
             onClick={() => router.push(surveyHref)}
             className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm ${
@@ -181,16 +186,32 @@ export default function Sidebar() {
             <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold">NEW</span>
           </button>
 
+          {/* 마음패드 버튼 */}
+          <button
+            onClick={() => router.push("/mindpad")}
+            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm font-medium mt-2 border-t border-slate-700/50 pt-4 ${
+              pathname.startsWith("/mindpad")
+                ? "text-rose-300 bg-rose-500/10"
+                : "text-slate-400 hover:text-rose-300 hover:bg-rose-500/10"
+            }`}
+          >
+            <Heart size={20} />
+            <span className="flex-1 text-left">마음패드</span>
+            <span className="text-[10px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full font-bold">NEW</span>
+          </button>
+
           {/* 주간 브리핑 버튼 */}
           <button
             onClick={() => setWeeklyOpen(true)}
-            className="flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm text-slate-400 hover:text-white hover:bg-slate-800 font-medium mt-2 border-t border-slate-700/50 pt-4"
+            className="flex items-center gap-3 w-full py-3 px-4 rounded-xl transition-all text-sm text-slate-400 hover:text-white hover:bg-slate-800 font-medium"
           >
             <Newspaper size={20} />
             <span className="flex-1 text-left">주간 브리핑</span>
             <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">AI</span>
           </button>
         </div>
+
+        <AdBannerSidebar />
 
         <div className="mt-auto pt-4 pb-4 px-3 border-t border-slate-700/50">
           <button
@@ -222,7 +243,7 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around z-50 p-1 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]" style={{ paddingBottom: "max(4px, env(safe-area-inset-bottom))" }}>
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_NAV.map((item) => {
           const active = currentMatch === item.match;
           return (
             <button
@@ -283,13 +304,32 @@ export default function Sidebar() {
                 <span className="text-sm font-medium">내 프로필</span>
               </button>
 
+              {showDashboard && (
+                <button
+                  onClick={() => { router.push("/dashboard"); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 text-slate-700 transition-colors"
+                >
+                  <LayoutDashboard size={20} />
+                  <span className="text-sm font-medium">대시보드</span>
+                </button>
+              )}
+
               <button
                 onClick={() => { router.push(surveyHref); setMobileMenuOpen(false); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-emerald-50 text-slate-700 transition-colors"
               >
-                <ClipboardList size={20} />
+                <ClipboardList size={20} className="text-emerald-600" />
                 <span className="text-sm font-medium flex-1 text-left">설문연구</span>
                 <span className="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold">NEW</span>
+              </button>
+
+              <button
+                onClick={() => { router.push("/mindpad"); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-rose-50 text-slate-700 transition-colors"
+              >
+                <Heart size={20} className="text-rose-500" />
+                <span className="text-sm font-medium flex-1 text-left">마음패드</span>
+                <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold">NEW</span>
               </button>
 
               <button

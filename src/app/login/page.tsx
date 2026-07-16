@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/useAuth";
 import { getCredential, createCredential } from "@/lib/db";
-import { SCHOOLS, SCHOOL_LIST, SCHOOL_DISTRICTS, ROLES } from "@/lib/constants";
+import { SCHOOLS, SCHOOL_LIST, SCHOOL_DISTRICTS, ROLES, ROLE_PERMISSIONS } from "@/lib/constants";
 import type { School, Role } from "@/lib/constants";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -237,6 +237,11 @@ export default function LoginPage() {
               >
                 {ROLES.map((r) => (<option key={r} value={r}>{r}</option>))}
               </select>
+              {ROLE_PERMISSIONS[role] && (
+                <p className="mt-2 text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+                  <span className="font-semibold text-indigo-600">{role}</span> 직책의 권한: {ROLE_PERMISSIONS[role]}
+                </p>
+              )}
             </div>
 
             {/* 상태 안내 */}
