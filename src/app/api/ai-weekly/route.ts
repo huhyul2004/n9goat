@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-const SOLAR_API_KEY = process.env.SOLAR_API_KEY;
-const SOLAR_API_URL = "https://api.upstage.ai/v1/chat/completions";
+import { callClaude, hasClaudeKey } from "@/lib/claude";
 
 const SYSTEM_PROMPT = `너는 울산 남구 중학교 커뮤니티 N9의 주간 브리핑 도우미야.
 이번 주에 올라온 게시글, 공지사항, 투표, 일정 데이터를 분석해서 주간 요약 리포트를 작성해줘.
@@ -33,7 +31,7 @@ const SYSTEM_PROMPT = `너는 울산 남구 중학교 커뮤니티 N9의 주간 
 
 export async function POST(request: NextRequest) {
   try {
-    if (!SOLAR_API_KEY) {
+    if (!hasClaudeKey()) {
       return NextResponse.json({ error: "API key not configured" }, { status: 500 });
     }
 
@@ -98,29 +96,16 @@ export async function POST(request: NextRequest) {
       })),
     };
 
-    const response = await fetch(SOLAR_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SOLAR_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "solar-pro",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `이번 주(${monday.toLocaleDateString("ko-KR")} ~ ${now.toLocaleDateString("ko-KR")}) 커뮤니티 데이터를 분석해줘:\n\n${JSON.stringify(dataForAi, null, 2)}` },
-        ],
-        max_tokens: 2048,
-      }),
+    const content = await callClaude({
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: `이번 주(${monday.toLocaleDateString("ko-KR")} ~ ${now.toLocaleDateString("ko-KR")}) 커뮤니티 데이터를 분석해줘:\n\n${JSON.stringify(dataForAi, null, 2)}`,
+        },
+      ],
+      maxTokens: 2048,
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json({ error: `Solar API error: ${error}` }, { status: response.status });
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
 
     // JSON 파싱 (코드 블록 제거)
     const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();

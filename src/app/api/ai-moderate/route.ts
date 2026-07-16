@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const SOLAR_API_KEY = process.env.SOLAR_API_KEY;
-const SOLAR_API_URL = "https://api.upstage.ai/v1/chat/completions";
+import { callClaude, hasClaudeKey } from "@/lib/claude";
 
 const SYSTEM_PROMPT = `너는 울산 남구 중학교 커뮤니티 게시판의 콘텐츠 검수 도우미야.
 사용자가 작성한 글의 제목과 본문을 확인하고, 비윤리적이거나 부적절한 내용이 있는지 판단해줘.
@@ -30,7 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     const { title, content } = await request.json();
 
-    if (!SOLAR_API_KEY) {
+    if (!hasClaudeKey()) {
       // API 키가 없으면 그냥 통과
       return NextResponse.json({ ok: true });
     }
@@ -39,32 +37,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const response = await fetch(SOLAR_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SOLAR_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "solar-pro",
+    const raw = (
+      await callClaude({
+        system: SYSTEM_PROMPT,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
             content: `다음 글을 검수해줘:\n\n제목: ${title || "(없음)"}\n본문: ${content}`,
           },
         ],
-        max_tokens: 512,
-      }),
-    });
-
-    if (!response.ok) {
-      // API 오류 시 그냥 통과
-      return NextResponse.json({ ok: true });
-    }
-
-    const data = await response.json();
-    const raw = data.choices[0].message.content.trim();
+        maxTokens: 512,
+      })
+    ).trim();
 
     // JSON 파싱 시도
     try {

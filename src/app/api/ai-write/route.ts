@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const SOLAR_API_KEY = process.env.SOLAR_API_KEY;
-const SOLAR_API_URL = "https://api.upstage.ai/v1/chat/completions";
+import { callClaude, hasClaudeKey } from "@/lib/claude";
 
 const QUESTION_PROMPT = `너는 울산 남구 중학교 커뮤니티 게시판의 글쓰기 도우미야.
 사용자가 키워드나 간단한 문장을 입력하면, 그것을 바탕으로 게시판에 올릴 수 있는 완성된 글을 작성해줘.
@@ -34,7 +32,7 @@ export async function POST(request: NextRequest) {
     const { keywords, type } = await request.json();
     const systemPrompt = type === "announcement" ? ANNOUNCEMENT_PROMPT : QUESTION_PROMPT;
 
-    if (!SOLAR_API_KEY) {
+    if (!hasClaudeKey()) {
       return NextResponse.json(
         { error: "API key not configured" },
         { status: 500 }
@@ -48,37 +46,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(SOLAR_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SOLAR_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "solar-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          {
-            role: "user",
-            content: type === "announcement"
+    const content = await callClaude({
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content:
+            type === "announcement"
               ? `다음 내용을 바탕으로 공식 공지문을 작성해줘: ${keywords}`
               : `다음 키워드를 바탕으로 게시판 글을 작성해줘: ${keywords}`,
-          },
-        ],
-        max_tokens: 1024,
-      }),
+        },
+      ],
+      maxTokens: 1024,
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json(
-        { error: `Solar API error: ${error}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    const content = data.choices[0].message.content;
 
     // Split first line as title, rest as body
     const lines = content.split("\n");

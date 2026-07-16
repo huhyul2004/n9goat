@@ -9,6 +9,7 @@ import { fetchPolls, createPoll, votePoll, cancelVote, deletePoll, addPollOption
 import type { Poll } from "@/lib/types";
 import AuthGuard from "@/components/AuthGuard";
 import Sidebar from "@/components/Sidebar";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { BarChart3, Plus, X, Check, Trash2, PenLine } from "lucide-react";
 
 function PollContent() {
@@ -17,6 +18,8 @@ function PollContent() {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  // 투표 생성 모달 열리면 배경 스크롤 잠금
+  useBodyScrollLock(showCreate);
   const [newTitle, setNewTitle] = useState("");
   const [newOptions, setNewOptions] = useState(["", ""]);
   const [allowOther, setAllowOther] = useState(false);
