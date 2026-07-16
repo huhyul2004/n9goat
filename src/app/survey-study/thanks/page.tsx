@@ -8,12 +8,12 @@ export default function ThanksPage() {
           ✓
         </div>
         <h1 className="mb-2 text-2xl font-bold text-slate-900">
-          응답이 완료되었습니다
+          응답해 주셔서 감사합니다
         </h1>
         <p className="text-[15px] leading-relaxed text-slate-600">
-          소중한 시간을 내어 설문에 참여해 주셔서 감사합니다.
+          소중한 시간을 내어 주셔서 감사합니다.
           <br />
-          여러분의 응답은 무기명으로 연구에만 사용됩니다.
+          좋은 하루 보내세요!
         </p>
       </div>
     </main>

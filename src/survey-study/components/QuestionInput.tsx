@@ -1,6 +1,6 @@
 "use client";
 
-import type { GroupConfig, Question } from "../lib/types";
+import type { GroupConfig, Question, ScaleGroupKey } from "../lib/types";
 
 export interface AnswerDraft {
   value: number | null;
@@ -21,18 +21,17 @@ export default function QuestionInput({
   const setValue = (value: number | null) => onChange({ ...answer, value });
   const setReason = (reason: string) => onChange({ ...answer, reason });
 
+  const text =
+    group.kind === "openText"
+      ? question.descriptive
+      : question.variants[group.key as ScaleGroupKey];
+
   return (
     <div className="space-y-6">
       {/* 문항 텍스트 */}
-      {group.kind === "openText" ? (
-        <p className="text-lg font-semibold leading-relaxed text-slate-800">
-          {question.descriptive}
-        </p>
-      ) : (
-        <p className="text-lg font-semibold leading-relaxed text-slate-800">
-          {question.statement}
-        </p>
-      )}
+      <p className="text-lg font-semibold leading-relaxed text-slate-800">
+        {text}
+      </p>
 
       {/* 그룹별 응답 UI */}
       {group.kind === "scale5" && (
@@ -41,8 +40,7 @@ export default function QuestionInput({
           max={5}
           value={answer.value}
           onPick={setValue}
-          leftLabel={group.leftLabel}
-          rightLabel={group.rightLabel}
+          pointLabels={group.pointLabels}
         />
       )}
 
@@ -52,9 +50,7 @@ export default function QuestionInput({
           max={4}
           value={answer.value}
           onPick={setValue}
-          leftLabel={group.leftLabel}
-          rightLabel={group.rightLabel}
-          noMiddleHint
+          pointLabels={group.pointLabels}
         />
       )}
 
@@ -72,7 +68,7 @@ export default function QuestionInput({
           value={answer.reason}
           onChange={(e) => setReason(e.target.value)}
           rows={6}
-          placeholder="자유롭게 서술해 주세요."
+          placeholder="자유롭게 적어 주세요."
           className="w-full rounded-xl border border-slate-300 p-4 text-base leading-relaxed focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
         />
       )}
@@ -81,7 +77,7 @@ export default function QuestionInput({
       {group.askReason && (
         <div className="pt-2">
           <label className="mb-2 block text-sm font-medium text-slate-600">
-            그렇게 응답하신 이유를 자유롭게 적어주세요.{" "}
+            왜 그렇게 생각하시는지 자유롭게 적어 주세요.{" "}
             <span className="text-slate-400">(선택)</span>
           </label>
           <textarea
@@ -97,59 +93,59 @@ export default function QuestionInput({
   );
 }
 
-/** 원형 버튼 척도 (5점/4점 공용) */
+/** 원형 버튼 척도 (5점/4점 공용) — 각 선택지 아래 라벨 표시 */
 function CircleScale({
   min,
   max,
   value,
   onPick,
-  leftLabel,
-  rightLabel,
-  noMiddleHint,
+  pointLabels,
 }: {
   min: number;
   max: number;
   value: number | null;
   onPick: (v: number) => void;
-  leftLabel?: string;
-  rightLabel?: string;
-  noMiddleHint?: boolean;
+  pointLabels?: string[];
 }) {
   const nums: number[] = [];
   for (let i = min; i <= max; i++) nums.push(i);
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-2">
-        {nums.map((n) => {
+      <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+        {nums.map((n, i) => {
           const selected = value === n;
           return (
             <button
               key={n}
               type="button"
               onClick={() => onPick(n)}
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-lg font-bold transition-all sm:h-16 sm:w-16 sm:text-xl ${
-                selected
-                  ? "border-indigo-600 bg-indigo-600 text-white shadow-lg scale-105"
-                  : "border-slate-300 bg-white text-slate-600 hover:border-indigo-400 hover:bg-indigo-50"
-              }`}
+              className="group flex min-w-0 flex-1 flex-col items-center gap-1.5"
               aria-pressed={selected}
-              aria-label={`${n}점`}
+              aria-label={pointLabels?.[i] ?? `${n}`}
             >
-              {n}
+              <span
+                className={`flex h-12 w-12 items-center justify-center rounded-full border-2 text-lg font-bold transition-all sm:h-16 sm:w-16 sm:text-xl ${
+                  selected
+                    ? "border-indigo-600 bg-indigo-600 text-white shadow-lg scale-105"
+                    : "border-slate-300 bg-white text-slate-600 group-hover:border-indigo-400 group-hover:bg-indigo-50"
+                }`}
+              >
+                {n}
+              </span>
+              {pointLabels?.[i] && (
+                <span
+                  className={`text-center text-[10px] leading-tight sm:text-xs ${
+                    selected ? "font-semibold text-indigo-600" : "text-slate-500"
+                  }`}
+                >
+                  {pointLabels[i]}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-slate-500 sm:text-sm">
-        <span>{leftLabel}</span>
-        <span>{rightLabel}</span>
-      </div>
-      {noMiddleHint && (
-        <p className="mt-2 text-center text-xs text-slate-400">
-          ※ 정중앙(중간값) 선택지가 없습니다.
-        </p>
-      )}
     </div>
   );
 }
@@ -194,7 +190,7 @@ function SliderScale({
       </div>
       {!touched && (
         <p className="mt-2 text-center text-xs text-slate-400">
-          슬라이더를 움직여 응답해 주세요.
+          슬라이더를 움직여 답해 주세요.
         </p>
       )}
     </div>

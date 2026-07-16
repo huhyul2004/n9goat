@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS survey_responses (
   question_id INT NOT NULL,       -- 1~8
   value NUMERIC,                  -- 척도 점수. 결측(건너뜀)/D그룹이면 NULL
   reason_text TEXT,               -- 이유 서술(A/B/C) 또는 D그룹 서술 응답
+  manual_code INT CHECK (manual_code BETWEEN 1 AND 5), -- D그룹 서술에 관리자가 부여하는 5단계 코드
   duration_ms INT,                -- 이 문항에 걸린 응답 소요시간(ms)
   answered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -32,6 +33,10 @@ CREATE TABLE IF NOT EXISTS survey_responses (
 
 CREATE INDEX IF NOT EXISTS idx_survey_responses_session ON survey_responses (session_id);
 CREATE INDEX IF NOT EXISTS idx_survey_responses_question ON survey_responses (question_id);
+
+-- 이미 테이블을 만든 뒤 업데이트하는 경우를 위한 마이그레이션 (여러 번 실행해도 안전)
+ALTER TABLE survey_responses
+  ADD COLUMN IF NOT EXISTS manual_code INT CHECK (manual_code BETWEEN 1 AND 5);
 
 -- ============================================================
 -- RLS: 무기명 설문이므로 익명(anon) 키로 삽입/조회를 허용합니다.

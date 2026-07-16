@@ -6,29 +6,60 @@ import GroupedBarChart, {
 } from "@/survey-study/components/GroupedBarChart";
 import QrCode from "@/survey-study/components/QrCode";
 import { GROUPS, GROUP_KEYS, QUESTIONS } from "@/survey-study/lib/questions";
-import { fetchAllSessions } from "@/survey-study/lib/db";
-import { computeAggregate } from "@/survey-study/lib/aggregate";
-import { keywordFrequency, round } from "@/survey-study/lib/stats";
+import { fetchAllSessions, updateManualCode } from "@/survey-study/lib/db";
+import {
+  computeAggregate,
+  DEFAULT_D_CODE_MAP,
+} from "@/survey-study/lib/aggregate";
+import { keywordFrequency, round, validNumbers } from "@/survey-study/lib/stats";
 import { downloadCsv, toCsv } from "@/survey-study/lib/csv";
-import type { GroupKey, SessionWithResponses } from "@/survey-study/lib/types";
+import type {
+  GroupKey,
+  SessionWithResponses,
+  SurveyResponse,
+} from "@/survey-study/lib/types";
 
 const GROUP_COLOR: Record<GroupKey, string> = {
   A: "#6366f1", // indigo
   B: "#10b981", // emerald
   C: "#f59e0b", // amber
-  D: "#94a3b8", // slate (서술형)
+  D: "#94a3b8", // slate (서술형 → 수동 코딩)
 };
 
-// 정규화 비교/표준편차 차트에는 수치가 있는 A/B/C만 사용
-const NUM_GROUPS: GroupKey[] = ["A", "B", "C"];
+const AUTH_KEY = "survey-study:admin";
+const DMAP_KEY = "survey-study:dmap";
 
 export default function DashboardPage() {
+  // ---- 비밀번호 게이트 ----
+  const [authed, setAuthed] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authing, setAuthing] = useState(false);
+
   const [sessions, setSessions] = useState<SessionWithResponses[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [present, setPresent] = useState(false); // 발표용 보기 모드
   const [showQr, setShowQr] = useState(false);
   const [origin, setOrigin] = useState("");
+
+  // D그룹 수동 코드 → 0~100 매핑 (관리자가 직접 정의, localStorage 보존)
+  const [dMap, setDMap] = useState<Record<number, number>>(DEFAULT_D_CODE_MAP);
+  const [savingCodeId, setSavingCodeId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setOrigin(window.location.origin);
+    setAuthed(sessionStorage.getItem(AUTH_KEY) === "1");
+    setAuthChecked(true);
+    try {
+      const raw = localStorage.getItem(DMAP_KEY);
+      if (raw) setDMap({ ...DEFAULT_D_CODE_MAP, ...JSON.parse(raw) });
+    } catch {
+      // 무시 — 기본 매핑 사용
+    }
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -46,14 +77,143 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") setOrigin(window.location.origin);
-    load();
-  }, []);
+    if (authed) load();
+  }, [authed]);
+
+  const submitPassword = async () => {
+    setAuthing(true);
+    setAuthError(null);
+    try {
+      const res = await fetch("/api/survey-study/admin-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        sessionStorage.setItem(AUTH_KEY, "1");
+        setAuthed(true);
+      } else {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setAuthError(
+          body?.error ?? "비밀번호가 일치하지 않습니다. 다시 입력해 주세요."
+        );
+      }
+    } catch {
+      setAuthError("확인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setAuthing(false);
+    }
+  };
+
+  const setDMapValue = (code: number, v: number) => {
+    const clamped = Math.max(0, Math.min(100, v));
+    setDMap((prev) => {
+      const next = { ...prev, [code]: clamped };
+      try {
+        localStorage.setItem(DMAP_KEY, JSON.stringify(next));
+      } catch {
+        // 저장 실패해도 화면 동작에는 지장 없음
+      }
+      return next;
+    });
+  };
+
+  const codeResponse = async (responseId: string, code: number | null) => {
+    setSavingCodeId(responseId);
+    const res = await updateManualCode(responseId, code);
+    if (res.ok) {
+      setSessions((prev) =>
+        prev
+          ? prev.map((s) => ({
+              ...s,
+              responses: s.responses.map((r) =>
+                r.id === responseId ? { ...r, manual_code: code } : r
+              ),
+            }))
+          : prev
+      );
+    }
+    setSavingCodeId(null);
+  };
 
   const agg = useMemo(
-    () => (sessions ? computeAggregate(sessions) : null),
-    [sessions]
+    () => (sessions ? computeAggregate(sessions, dMap) : null),
+    [sessions, dMap]
   );
+
+  // 그룹별 완주율·평균 소요시간
+  const groupSummary = useMemo(() => {
+    if (!sessions) return null;
+    const out = {} as Record<
+      GroupKey,
+      { total: number; completed: number; rate: number | null; avgSec: number | null }
+    >;
+    for (const g of GROUP_KEYS) {
+      const gs = sessions.filter((s) => s.group === g);
+      const done = gs.filter((s) => s.completed_at);
+      const secs = done
+        .map(
+          (s) =>
+            (new Date(s.completed_at as string).getTime() -
+              new Date(s.started_at).getTime()) /
+            1000
+        )
+        .filter((v) => Number.isFinite(v) && v > 0);
+      out[g] = {
+        total: gs.length,
+        completed: done.length,
+        rate: gs.length ? (done.length / gs.length) * 100 : null,
+        avgSec: secs.length
+          ? secs.reduce((a, b) => a + b, 0) / secs.length
+          : null,
+      };
+    }
+    return out;
+  }, [sessions]);
+
+  // A그룹 "보통이다"(3점) 선택률 / C그룹 heaping 지표
+  const biasSummary = useMemo(() => {
+    if (!sessions) return null;
+    const aValues = validNumbers(
+      sessions
+        .filter((s) => s.group === "A")
+        .flatMap((s) => s.responses.map((r) => r.value))
+    );
+    const cValues = validNumbers(
+      sessions
+        .filter((s) => s.group === "C")
+        .flatMap((s) => s.responses.map((r) => r.value))
+    );
+    const aMidPct = aValues.length
+      ? (aValues.filter((v) => v === 3).length / aValues.length) * 100
+      : null;
+    const cRound10Pct = cValues.length
+      ? (cValues.filter((v) => v % 10 === 0).length / cValues.length) * 100
+      : null;
+    const cAnchorPct = cValues.length
+      ? (cValues.filter((v) => v === 0 || v === 50 || v === 100).length /
+          cValues.length) *
+        100
+      : null;
+    return { aMidPct, cRound10Pct, cAnchorPct, cValues };
+  }, [sessions]);
+
+  // C그룹 응답 분포 히스토그램 (heaping 시각화)
+  const cHistogram = useMemo(() => {
+    if (!biasSummary) return null;
+    const bins = [
+      "0–9", "10–19", "20–29", "30–39", "40–49",
+      "50–59", "60–69", "70–79", "80–89", "90–99", "100",
+    ];
+    const counts = new Array(bins.length).fill(0) as number[];
+    for (const v of biasSummary.cValues) {
+      const i = v >= 100 ? 10 : Math.floor(v / 10);
+      counts[i] += 1;
+    }
+    return { bins, counts, max: Math.max(4, ...counts) };
+  }, [biasSummary]);
 
   // 이유/서술 텍스트 그룹별 키워드
   const keywordsByGroup = useMemo(() => {
@@ -68,10 +228,29 @@ export default function DashboardPage() {
     return out;
   }, [sessions]);
 
-  // 정규화 평균 비교 차트 (문항 x 그룹)
+  // D그룹 코딩 대상 (서술 응답이 있는 것만)
+  const dCodingRows = useMemo(() => {
+    if (!sessions) return [];
+    const rows: { session: SessionWithResponses; response: SurveyResponse }[] =
+      [];
+    for (const s of sessions.filter((x) => x.group === "D")) {
+      for (const r of s.responses) {
+        if (r.reason_text && r.reason_text.trim()) {
+          rows.push({ session: s, response: r });
+        }
+      }
+    }
+    return rows;
+  }, [sessions]);
+
+  const codedCount = dCodingRows.filter(
+    (x) => x.response.manual_code != null
+  ).length;
+
+  // 정규화 평균/표준편차 비교 차트 — D그룹은 수동 코딩된 응답만 반영
   const normMeanSeries: BarSeries[] = useMemo(() => {
     if (!agg) return [];
-    return NUM_GROUPS.map((g) => ({
+    return GROUP_KEYS.map((g) => ({
       key: g,
       label: GROUPS[g].label,
       color: GROUP_COLOR[g],
@@ -82,10 +261,9 @@ export default function DashboardPage() {
     }));
   }, [agg]);
 
-  // 정규화 표준편차 비교 차트
   const normStdSeries: BarSeries[] = useMemo(() => {
     if (!agg) return [];
-    return NUM_GROUPS.map((g) => ({
+    return GROUP_KEYS.map((g) => ({
       key: g,
       label: GROUPS[g].label,
       color: GROUP_COLOR[g],
@@ -102,6 +280,53 @@ export default function DashboardPage() {
   };
 
   const categories = QUESTIONS.map((q) => `Q${q.id}`);
+
+  // ---- 게이트 화면 ----
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center text-slate-400">
+        확인 중…
+      </main>
+    );
+  }
+
+  if (!authed) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
+        <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+          <h1 className="mb-1 text-xl font-bold text-slate-900">
+            연구자 대시보드
+          </h1>
+          <p className="mb-6 text-sm text-slate-500">
+            관리자 비밀번호를 입력해 주세요.
+          </p>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && password && !authing) submitPassword();
+            }}
+            placeholder="비밀번호"
+            className="mb-4 w-full rounded-xl border border-slate-300 p-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            autoFocus
+          />
+          {authError && (
+            <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+              {authError}
+            </p>
+          )}
+          <button
+            onClick={submitPassword}
+            disabled={!password || authing}
+            className="w-full rounded-xl bg-indigo-600 py-3 font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {authing ? "확인 중…" : "들어가기"}
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (loading) {
     return (
@@ -120,7 +345,7 @@ export default function DashboardPage() {
             연구자 대시보드
           </h1>
           <p className="text-sm text-slate-500">
-            설문 응답 방식에 따른 응답 편향 비교
+            응답 척도 형식에 따른 변별력·타당도 비교
           </p>
         </div>
 
@@ -176,26 +401,90 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 개요 카드 */}
-      {agg && (
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard label="전체 세션" value={agg.totalSessions} />
-          <StatCard label="완료" value={agg.completedSessions} accent />
-          {GROUP_KEYS.map((g) => (
+      {/* 그룹별 요약 카드: 응답자 수·완주율·평균 소요시간 */}
+      {groupSummary && agg && (
+        <div className="mb-8">
+          <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-2">
+            <StatCard label="전체 세션" value={String(agg.totalSessions)} />
             <StatCard
-              key={g}
-              label={`${g}그룹 완료`}
-              value={agg.groupCounts[g]}
-              color={GROUP_COLOR[g]}
+              label="완료 세션"
+              value={String(agg.completedSessions)}
+              accent
             />
-          ))}
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {GROUP_KEYS.map((g) => {
+              const s = groupSummary[g];
+              return (
+                <div
+                  key={g}
+                  className="rounded-xl border border-slate-200 bg-white p-4"
+                >
+                  <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-sm"
+                      style={{ backgroundColor: GROUP_COLOR[g] }}
+                    />
+                    {GROUPS[g].label}
+                  </div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {s.completed}
+                    <span className="text-sm font-normal text-slate-400">
+                      {" "}
+                      / {s.total}명
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    완주율 {s.rate === null ? "—" : `${fmt(s.rate, 0)}%`} · 평균{" "}
+                    {s.avgSec === null ? "—" : fmtDuration(s.avgSec)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 응답 스타일 지표 카드 */}
+      {biasSummary && (
+        <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatCard
+            label='A그룹 "보통이다"(3점) 선택 비율'
+            value={
+              biasSummary.aMidPct === null
+                ? "—"
+                : `${fmt(biasSummary.aMidPct, 1)}%`
+            }
+            color={GROUP_COLOR.A}
+            sub="높을수록 중심화 경향이 강함"
+          />
+          <StatCard
+            label="C그룹 10의 배수 응답 비율"
+            value={
+              biasSummary.cRound10Pct === null
+                ? "—"
+                : `${fmt(biasSummary.cRound10Pct, 1)}%`
+            }
+            color={GROUP_COLOR.C}
+            sub="특정 숫자로 몰림(heaping) 지표 ①"
+          />
+          <StatCard
+            label="C그룹 0·50·100 응답 비율"
+            value={
+              biasSummary.cAnchorPct === null
+                ? "—"
+                : `${fmt(biasSummary.cAnchorPct, 1)}%`
+            }
+            color={GROUP_COLOR.C}
+            sub="특정 숫자로 몰림(heaping) 지표 ②"
+          />
         </div>
       )}
 
       {/* 정규화 평균 비교 */}
       <Section
         title="① 그룹 간 평균 비교 (0~100 정규화)"
-        desc="척도 범위가 다르므로 A(1~5)·B(1~4)·C(0~100)를 모두 0~100으로 정규화한 평균입니다. D그룹은 척도가 없어 제외(N/A)."
+        desc="척도 범위가 다르므로 A(1~5)·B(1~4)·C(0~100)를 모두 0~100으로 정규화한 평균입니다. D그룹은 수동 코딩(1~5)된 응답만 매핑표에 따라 반영됩니다."
       >
         <GroupedBarChart
           categories={categories}
@@ -220,16 +509,39 @@ export default function DashboardPage() {
         />
       </Section>
 
+      {/* C그룹 분포 히스토그램 */}
+      {cHistogram && (
+        <Section
+          title="③ C그룹(0~100) 응답 분포 — heaping 확인"
+          desc="0~100 슬라이더 응답이 특정 구간·숫자(0, 50, 100, 10의 배수)에 몰리는지 확인합니다. 전 문항 합산 분포입니다."
+        >
+          <GroupedBarChart
+            categories={cHistogram.bins}
+            series={[
+              {
+                key: "C",
+                label: GROUPS.C.label,
+                color: GROUP_COLOR.C,
+                values: cHistogram.counts,
+              },
+            ]}
+            yMax={cHistogram.max}
+            yLabel="응답 수"
+            unit="건"
+          />
+        </Section>
+      )}
+
       {/* 문항별 기술통계 테이블 */}
       <Section
-        title="③ 문항별·그룹별 기술통계"
-        desc="모든 통계 옆에 유효 표본수 n을 함께 표시합니다. 표준편차는 표본표준편차(n-1)."
+        title="④ 구성개념별·그룹별 기술통계"
+        desc="모든 통계 옆에 유효 표본수 n을 함께 표시합니다. 표준편차는 표본표준편차(n-1). D그룹의 원점수는 수동 코드(1~5)입니다."
       >
         <div className="space-y-6">
           {QUESTIONS.map((q) => (
             <div key={q.id}>
               <h3 className="mb-2 text-sm font-semibold text-slate-700">
-                Q{q.id}. {q.statement}
+                Q{q.id}. {q.construct}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] border-collapse text-sm">
@@ -302,9 +614,95 @@ export default function DashboardPage() {
         </div>
       </Section>
 
+      {/* D그룹 수동 코딩 */}
+      {!present && (
+        <Section
+          title={`⑤ D그룹 서술 응답 수동 코딩 (${codedCount}/${dCodingRows.length})`}
+          desc="서술형 응답을 읽고 만족도를 1(매우 낮음)~5(매우 높음)로 코딩합니다. 코딩된 값은 아래 매핑표에 따라 0~100으로 환산되어 ①·② 차트와 통계에 반영됩니다."
+        >
+          {/* 매핑표 편집 */}
+          <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="mb-2 text-sm font-semibold text-slate-700">
+              코드 → 0~100 매핑표 (직접 수정 가능, 이 브라우저에 저장됨)
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {[1, 2, 3, 4, 5].map((code) => (
+                <label
+                  key={code}
+                  className="flex items-center gap-1.5 text-sm text-slate-600"
+                >
+                  <span className="font-bold">{code}</span>→
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={dMap[code] ?? 0}
+                    onChange={(e) =>
+                      setDMapValue(code, Number(e.target.value))
+                    }
+                    className="w-16 rounded-lg border border-slate-300 p-1.5 text-center focus:border-indigo-500 focus:outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {dCodingRows.length === 0 ? (
+            <p className="text-sm text-slate-400">
+              아직 코딩할 D그룹 서술 응답이 없습니다.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {dCodingRows.map(({ response: r }) => {
+                const q = QUESTIONS.find((x) => x.id === r.question_id);
+                return (
+                  <div
+                    key={r.id}
+                    className="rounded-xl border border-slate-200 p-4"
+                  >
+                    <div className="mb-1 text-xs font-semibold text-slate-400">
+                      Q{r.question_id}. {q?.construct ?? ""}
+                    </div>
+                    <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                      {r.reason_text}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {[1, 2, 3, 4, 5].map((code) => {
+                        const selected = r.manual_code === code;
+                        return (
+                          <button
+                            key={code}
+                            onClick={() =>
+                              codeResponse(r.id!, selected ? null : code)
+                            }
+                            disabled={savingCodeId === r.id}
+                            className={`h-9 w-9 rounded-full border-2 text-sm font-bold transition-all disabled:opacity-50 ${
+                              selected
+                                ? "border-indigo-600 bg-indigo-600 text-white"
+                                : "border-slate-300 bg-white text-slate-600 hover:border-indigo-400"
+                            }`}
+                          >
+                            {code}
+                          </button>
+                        );
+                      })}
+                      <span className="ml-2 text-xs text-slate-400">
+                        {r.manual_code != null
+                          ? `코드 ${r.manual_code} → ${dMap[r.manual_code] ?? "—"}점`
+                          : "미코딩"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Section>
+      )}
+
       {/* 키워드 빈도 */}
       <Section
-        title="④ 이유·서술 텍스트 키워드 빈도"
+        title="⑥ 이유·서술 텍스트 키워드 빈도"
         desc="A/B/C 그룹의 '이유' 서술과 D그룹의 서술형 응답에서 자주 등장한 단어입니다. 정량(점수)과 정성(이유)을 비교하는 데 사용합니다."
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -358,16 +756,25 @@ function fmt(v: number | null, digits = 2): string {
   return r === null ? "—" : String(r);
 }
 
+/** 초 → "m분 s초" 표시 */
+function fmtDuration(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return m > 0 ? `${m}분 ${s}초` : `${s}초`;
+}
+
 function StatCard({
   label,
   value,
   accent,
   color,
+  sub,
 }: {
   label: string;
-  value: number;
+  value: string | number;
   accent?: boolean;
   color?: string;
+  sub?: string;
 }) {
   return (
     <div
@@ -382,6 +789,7 @@ function StatCard({
       >
         {value}
       </div>
+      {sub && <div className="mt-0.5 text-[11px] text-slate-400">{sub}</div>}
     </div>
   );
 }

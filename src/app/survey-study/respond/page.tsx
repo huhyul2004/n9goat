@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProgressBar from "@/survey-study/components/ProgressBar";
 import QuestionInput, {
   type AnswerDraft,
 } from "@/survey-study/components/QuestionInput";
-import { GROUPS, QUESTIONS } from "@/survey-study/lib/questions";
+import { GROUPS, QUESTIONS, orderedQuestions } from "@/survey-study/lib/questions";
 import {
   completeSession,
   createSession,
+  saveResponse,
   saveResponses,
 } from "@/survey-study/lib/db";
 import type { GroupKey } from "@/survey-study/lib/types";
@@ -58,6 +59,12 @@ export default function RespondPage() {
     }
   }, [router]);
 
+  // 그룹별 문항 제시 순서 (구성개념은 동일, 순서는 그룹마다 다름)
+  const ordered = useMemo(
+    () => (group ? orderedQuestions(group) : []),
+    [group]
+  );
+
   if (step === "loading" || !group) {
     return (
       <main className="flex min-h-screen items-center justify-center text-slate-400">
@@ -67,19 +74,7 @@ export default function RespondPage() {
   }
 
   const cfg = GROUPS[group];
-  const total = QUESTIONS.length;
-
-  /** 현재 문항에 머문 시간을 durations에 누적 */
-  const accumulateDuration = () => {
-    const now = Date.now();
-    const elapsed = now - shownAt.current;
-    setDurations((prev) => {
-      const next = [...prev];
-      next[index] = (next[index] || 0) + Math.max(0, elapsed);
-      return next;
-    });
-    shownAt.current = now;
-  };
+  const total = ordered.length;
 
   const startQuestions = async () => {
     setError(null);
@@ -92,7 +87,7 @@ export default function RespondPage() {
     });
     if (!res.ok || !res.id) {
       setError(
-        "세션 생성에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해 주세요."
+        "시작에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해 주세요."
       );
       setStep("demographics");
       return;
@@ -111,6 +106,36 @@ export default function RespondPage() {
     });
   };
 
+  /**
+   * 현재 문항을 즉시 서버에 저장(중도 이탈 시에도 부분 데이터 확보).
+   * 실패해도 흐름을 막지 않는다 — 마지막 제출에서 전체 upsert로 보정됨.
+   */
+  const persistCurrent = (durationMs: number, draft: AnswerDraft) => {
+    if (!sessionId) return;
+    void saveResponse({
+      session_id: sessionId,
+      question_id: ordered[index].id,
+      value: draft.value,
+      reason_text: draft.reason.trim() || null,
+      duration_ms: durationMs > 0 ? durationMs : null,
+      answered_at: new Date().toISOString(),
+    });
+  };
+
+  /** 현재 문항에 머문 시간을 누적하고 그 총합을 반환 */
+  const accumulateDuration = (): number => {
+    const now = Date.now();
+    const elapsed = Math.max(0, now - shownAt.current);
+    const totalMs = (durations[index] || 0) + elapsed;
+    setDurations((prev) => {
+      const next = [...prev];
+      next[index] = totalMs;
+      return next;
+    });
+    shownAt.current = now;
+    return totalMs;
+  };
+
   const goPrev = () => {
     if (index === 0) return;
     accumulateDuration();
@@ -119,7 +144,8 @@ export default function RespondPage() {
   };
 
   const goNext = () => {
-    accumulateDuration();
+    const totalMs = accumulateDuration();
+    persistCurrent(totalMs, answers[index]);
     if (index < total - 1) {
       setIndex((i) => i + 1);
       shownAt.current = Date.now();
@@ -130,8 +156,16 @@ export default function RespondPage() {
 
   const skip = () => {
     // 현재 문항을 결측(값 없음)으로 두고 이동
-    updateAnswer({ value: null, reason: answers[index].reason });
-    goNext();
+    const draft = { value: null, reason: answers[index].reason };
+    updateAnswer(draft);
+    const totalMs = accumulateDuration();
+    persistCurrent(totalMs, draft);
+    if (index < total - 1) {
+      setIndex((i) => i + 1);
+      shownAt.current = Date.now();
+    } else {
+      submitAll();
+    }
   };
 
   const submitAll = async () => {
@@ -146,7 +180,7 @@ export default function RespondPage() {
       (finalDurations[index] || 0) + Math.max(0, now - shownAt.current);
 
     const answeredAt = new Date().toISOString();
-    const rows = QUESTIONS.map((q, i) => ({
+    const rows = ordered.map((q, i) => ({
       session_id: sessionId,
       question_id: q.id,
       value: answers[i].value, // D그룹/건너뜀이면 null
@@ -157,7 +191,7 @@ export default function RespondPage() {
 
     const saveRes = await saveResponses(rows);
     if (!saveRes.ok) {
-      setError("응답 저장에 실패했습니다. 다시 시도해 주세요.");
+      setError("저장에 실패했습니다. 다시 시도해 주세요.");
       setStep("question");
       return;
     }
@@ -209,7 +243,7 @@ export default function RespondPage() {
             disabled={step === "submitting"}
             className="w-full rounded-xl bg-indigo-600 py-3.5 text-base font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
           >
-            {step === "submitting" ? "준비 중…" : "설문 시작"}
+            {step === "submitting" ? "준비 중…" : "시작하기"}
           </button>
         </div>
       </main>
@@ -218,7 +252,7 @@ export default function RespondPage() {
 
   // ---- 문항 화면 ----
   const answer = answers[index];
-  const q = QUESTIONS[index];
+  const q = ordered[index];
   const answered =
     cfg.kind === "openText"
       ? answer.reason.trim().length > 0
