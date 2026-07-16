@@ -37,9 +37,21 @@ export interface Aggregate {
   completedSessions: number;
 }
 
-export function computeAggregate(sessions: SessionWithResponses[]): Aggregate {
-  const groupCounts = { A: 0, B: 0, C: 0 } as Record<GroupKey, number>;
-  const groupTotals = { A: 0, B: 0, C: 0 } as Record<GroupKey, number>;
+/** D그룹 수동 코드(1~5) → 0~100 매핑 기본값. 관리자가 대시보드에서 수정 가능 */
+export const DEFAULT_D_CODE_MAP: Record<number, number> = {
+  1: 0,
+  2: 25,
+  3: 50,
+  4: 75,
+  5: 100,
+};
+
+export function computeAggregate(
+  sessions: SessionWithResponses[],
+  dCodeMap: Record<number, number> = DEFAULT_D_CODE_MAP
+): Aggregate {
+  const groupCounts = { A: 0, B: 0, C: 0, D: 0 } as Record<GroupKey, number>;
+  const groupTotals = { A: 0, B: 0, C: 0, D: 0 } as Record<GroupKey, number>;
   let completedSessions = 0;
 
   for (const s of sessions) {
@@ -61,10 +73,23 @@ export function computeAggregate(sessions: SessionWithResponses[]): Aggregate {
         .map((s) => s.responses.find((r) => r.question_id === q.id))
         .filter((r): r is NonNullable<typeof r> => Boolean(r));
 
-      const values = rows.map((r) => r.value);
-      const norm = values
-        .map((v) => normalizeToPercent(g, v))
-        .filter((v): v is number => v !== null);
+      // D그룹은 척도값이 없으므로 관리자 수동 코드(1~5)를 원점수로 사용
+      const values =
+        g === "D"
+          ? rows.map((r) => r.manual_code ?? null)
+          : rows.map((r) => r.value);
+      const norm =
+        g === "D"
+          ? values
+              .map((v) =>
+                typeof v === "number" && dCodeMap[v] !== undefined
+                  ? dCodeMap[v]
+                  : null
+              )
+              .filter((v): v is number => v !== null)
+          : values
+              .map((v) => normalizeToPercent(g, v))
+              .filter((v): v is number => v !== null);
       const durations = rows
         .map((r) => r.duration_ms)
         .filter((d): d is number => typeof d === "number" && d > 0);

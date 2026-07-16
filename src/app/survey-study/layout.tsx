@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
 // survey-study 전용 메타데이터 (N9 루트 레이아웃 위에 덧씌움)
+// [내부 원칙] 브라우저 탭 제목에도 조사 설계 단서를 노출하지 않는다.
 export const metadata: Metadata = {
-  title: "설문 응답 방식 비교 연구",
-  description: "응답 방식(척도)에 따른 설문 응답 편향 비교 연구",
+  title: "생활 만족도 의견 조사",
+  description: "학교(기관) 생활 만족도에 대한 간단한 의견 조사",
 };
 
 /**

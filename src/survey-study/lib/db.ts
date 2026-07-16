@@ -81,6 +81,22 @@ export async function saveResponses(
   return { ok: true };
 }
 
+/** D그룹 서술 응답에 수동 코드(1~5) 부여/해제 — 관리자 대시보드 전용 */
+export async function updateManualCode(
+  responseId: string,
+  code: number | null
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase
+    .from("survey_responses")
+    .update({ manual_code: code })
+    .eq("id", responseId);
+  if (error) {
+    console.error("[survey updateManualCode]", error.message);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
 /** 세션 완료 처리 */
 export async function completeSession(
   sessionId: string,
@@ -119,10 +135,15 @@ export async function fetchAllSessions(): Promise<SessionWithResponses[]> {
   const bySession = new Map<string, SurveyResponse[]>();
   for (const raw of (responses as Record<string, unknown>[]) || []) {
     const row: SurveyResponse = {
+      id: raw.id as string,
       session_id: raw.session_id as string,
       question_id: Number(raw.question_id),
       value: raw.value === null ? null : Number(raw.value),
       reason_text: (raw.reason_text as string) ?? null,
+      manual_code:
+        raw.manual_code === null || raw.manual_code === undefined
+          ? null
+          : Number(raw.manual_code),
       duration_ms: raw.duration_ms === null ? null : Number(raw.duration_ms),
       answered_at: raw.answered_at as string,
     };

@@ -24,6 +24,7 @@ export function toCsv(sessions: SessionWithResponses[]): string {
     "completed_at",
     "question_id",
     "value",
+    "manual_code",
     "duration_ms",
     "reason_text",
   ];
@@ -43,6 +44,7 @@ export function toCsv(sessions: SessionWithResponses[]): string {
           "",
           "",
           "",
+          "",
         ].join(",")
       );
       continue;
@@ -58,6 +60,7 @@ export function toCsv(sessions: SessionWithResponses[]): string {
           esc(s.completed_at),
           esc(r.question_id),
           esc(r.value),
+          esc(r.manual_code ?? null),
           esc(r.duration_ms),
           esc(r.reason_text),
         ].join(",")

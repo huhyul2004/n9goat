@@ -1,13 +1,18 @@
 // survey-study 전용 타입 (N9 기존 코드와 완전히 독립)
 
 /** 응답 방식 그룹 */
-export type GroupKey = "A" | "B" | "C";
+export type GroupKey = "A" | "B" | "C" | "D";
 
-/** 문항 정의 */
+/** 척도형 그룹(문구 변형이 존재하는 그룹) */
+export type ScaleGroupKey = "A" | "B" | "C";
+
+/** 문항 정의 — id가 곧 구성개념 번호(1~8, 응답자 비노출) */
 export interface Question {
-  id: number; // 1~8
-  /** A/B/C 그룹에서 척도 위에 표시되는 짧은 진술문 */
-  statement: string;
+  id: number; // 1~8 (constructIndex)
+  /** 구성개념 이름 — 관리자 대시보드 전용 표시 (응답자 비노출) */
+  construct: string;
+  /** 그룹별로 자연스럽게 다르게 표현한 진술문 (같은 것을 묻는 티가 나지 않게) */
+  variants: Record<ScaleGroupKey, string>;
   /** D 그룹(척도 없음)에서 사용되는 완전한 서술형 질문 문장 */
   descriptive: string;
 }
@@ -24,6 +29,8 @@ export interface GroupConfig {
   /** 좌/우 끝 라벨 */
   leftLabel?: string;
   rightLabel?: string;
+  /** 각 선택지 아래 표시할 라벨 (scale5/scale4 전용) */
+  pointLabels?: string[];
   /** 척도 응답 뒤에 이유 서술을 받을지 여부 */
   askReason: boolean;
 }
@@ -48,6 +55,8 @@ export interface SurveyResponse {
   value: number | null;
   /** 이유 서술(A/B/C) 또는 D그룹 서술 응답 */
   reason_text: string | null;
+  /** D그룹 서술 응답에 관리자가 부여한 수동 코드(1~5). 미코딩이면 null */
+  manual_code?: number | null;
   /** 이 문항에 걸린 응답 소요시간(ms) */
   duration_ms: number | null;
   answered_at: string; // ISO

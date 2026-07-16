@@ -3,7 +3,11 @@
 import { useRouter } from "next/navigation";
 import { assignRandomGroup } from "@/survey-study/lib/questions";
 
-/** 응답자 진입 화면: 연구 목적 안내 + 시작하기 */
+/**
+ * 응답자 진입 화면.
+ * [내부 원칙] 조사 목적·설계에 대한 어떤 단서도 노출하지 않는다.
+ * 평범한 "생활 만족도 의견 조사" 안내만 표시한다.
+ */
 export default function SurveyIntroPage() {
   const router = useRouter();
 
@@ -22,22 +26,22 @@ export default function SurveyIntroPage() {
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-10">
       <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
         <p className="mb-2 text-sm font-semibold tracking-wide text-indigo-600">
-          설문 연구 참여
+          의견 조사
         </p>
         <h1 className="mb-4 text-2xl font-bold leading-snug text-slate-900">
-          응답 방식에 따른 설문 응답 차이 연구
+          생활 만족도에 대한 간단한 의견 조사입니다
         </h1>
         <div className="space-y-3 text-[15px] leading-relaxed text-slate-600">
           <p>
-            이 설문은 <b>설문 응답 방식에 따라 사람들의 응답이 어떻게 달라지는지</b>를
-            알아보기 위한 연구입니다. 같은 질문이라도 사람마다 다른 형태의
-            응답지가 제시됩니다.
+            학교(기관) 생활에 대한 여러분의 솔직한 의견을 여쭤보고 싶습니다.
+            총 8개의 질문이며, 약 3분 정도 걸립니다.
           </p>
           <p>
-            응답은 <b>완전한 무기명</b>으로 처리되며, 참여는 자발적입니다.
-            언제든 중단할 수 있고, 개인을 식별하는 정보는 수집하지 않습니다.
+            응답은 <b>이름 없이(무기명)</b> 처리되며, 개인을 알아볼 수 있는
+            정보는 수집하지 않습니다. 참여는 자유이며 언제든 그만두실 수
+            있습니다.
           </p>
-          <p>총 8문항이며, 약 3~5분 정도 소요됩니다.</p>
+          <p>정답은 없으니, 평소 느끼는 그대로 편하게 답해 주세요.</p>
         </div>
 
         <button
@@ -46,9 +50,6 @@ export default function SurveyIntroPage() {
         >
           시작하기
         </button>
-        <p className="mt-3 text-center text-xs text-slate-400">
-          시작하기를 누르면 연구 참여에 동의한 것으로 간주됩니다.
-        </p>
       </div>
     </main>
   );
