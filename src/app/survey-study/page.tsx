@@ -1,24 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { assignRandomGroup } from "@/survey-study/lib/questions";
 
 /**
  * 응답자 진입 화면.
  * [내부 원칙] 조사 목적·설계에 대한 어떤 단서도 노출하지 않는다.
  * 평범한 "생활 만족도 의견 조사" 안내만 표시한다.
+ * (그룹 배정·세션 생성은 다음 화면에서 서버가 처리하므로 여기선 이동만 한다.)
  */
 export default function SurveyIntroPage() {
   const router = useRouter();
 
   const start = () => {
-    // 응답자가 알 수 없게 그룹을 무작위 배정 (링크 하나로 자동 분배)
-    const group = assignRandomGroup();
-    const startedAt = new Date().toISOString();
-    sessionStorage.setItem(
-      "survey-study:init",
-      JSON.stringify({ group, startedAt })
-    );
     router.push("/survey-study/respond");
   };
 

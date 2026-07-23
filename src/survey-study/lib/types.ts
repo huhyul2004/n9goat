@@ -67,3 +67,27 @@ export interface SurveyResponse {
 export interface SessionWithResponses extends SurveySession {
   responses: SurveyResponse[];
 }
+
+/**
+ * 서버가 응답자에게 내려주는 '해석된 문항'.
+ * [블라인드] 그룹 글자(A/B/C/D)나 그룹 라벨을 절대 포함하지 않는다.
+ * 문항 텍스트와 입력 방식(kind)만 담아, 클라이언트는 자신이 어떤 그룹인지 알 수 없다.
+ */
+export interface SurveyItem {
+  questionId: number; // 1~8 (내부 식별용, 화면 비노출)
+  text: string; // 이미 그룹에 맞게 해석된 문항 문장
+  kind: "scale5" | "scale4" | "slider100" | "openText";
+  min?: number;
+  max?: number;
+  leftLabel?: string;
+  rightLabel?: string;
+  pointLabels?: string[];
+  askReason: boolean;
+}
+
+/** /api/survey-study/start 응답 형태 */
+export interface StartResponse {
+  sessionId: string;
+  startedAt: string;
+  items: SurveyItem[];
+}

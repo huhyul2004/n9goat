@@ -11,7 +11,16 @@ import {
   computeAggregate,
   DEFAULT_D_CODE_MAP,
 } from "@/survey-study/lib/aggregate";
-import { keywordFrequency, round, validNumbers } from "@/survey-study/lib/stats";
+import {
+  iqr,
+  keywordFrequency,
+  mean,
+  normalizeToPercent,
+  round,
+  sampleStd,
+  sampleVariance,
+  validNumbers,
+} from "@/survey-study/lib/stats";
 import { downloadCsv, toCsv } from "@/survey-study/lib/csv";
 import type {
   GroupKey,
@@ -29,9 +38,14 @@ const GROUP_COLOR: Record<GroupKey, string> = {
 const AUTH_KEY = "survey-study:admin";
 const DMAP_KEY = "survey-study:dmap";
 
+// 비밀번호 게이트 on/off 플래그.
+// 기본은 off(플래그가 "true"일 때만 게이트 활성화) — 나중에 다시 켤 땐
+// 환경변수 NEXT_PUBLIC_SURVEY_GATE_ENABLED=true 로만 바꾸면 된다.
+const GATE_ENABLED = process.env.NEXT_PUBLIC_SURVEY_GATE_ENABLED === "true";
+
 export default function DashboardPage() {
-  // ---- 비밀번호 게이트 ----
-  const [authed, setAuthed] = useState(false);
+  // ---- 비밀번호 게이트 ---- (GATE_ENABLED=false 면 통째로 우회)
+  const [authed, setAuthed] = useState(!GATE_ENABLED);
   const [authChecked, setAuthChecked] = useState(false);
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
@@ -51,7 +65,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     setOrigin(window.location.origin);
-    setAuthed(sessionStorage.getItem(AUTH_KEY) === "1");
+    if (GATE_ENABLED) {
+      setAuthed(sessionStorage.getItem(AUTH_KEY) === "1");
+    }
     setAuthChecked(true);
     try {
       const raw = localStorage.getItem(DMAP_KEY);
@@ -274,6 +290,81 @@ export default function DashboardPage() {
     }));
   }, [agg]);
 
+  // 변별력 종합: 그룹별 '정규화(0~100)' 응답값 풀에서 평균·표준편차·분산·IQR.
+  // (D그룹은 수동 코드(1~5)를 매핑표로 0~100 환산한 값만 사용)
+  const disc = useMemo(() => {
+    if (!sessions) return null;
+    const out = {} as Record<
+      GroupKey,
+      {
+        n: number;
+        mean: number | null;
+        sd: number | null;
+        variance: number | null;
+        iqr: number | null;
+      }
+    >;
+    for (const g of GROUP_KEYS) {
+      const gs = sessions.filter((s) => s.group === g);
+      const norm =
+        g === "D"
+          ? validNumbers(
+              gs.flatMap((s) =>
+                s.responses.map((r) =>
+                  r.manual_code != null && dMap[r.manual_code] !== undefined
+                    ? dMap[r.manual_code]
+                    : null
+                )
+              )
+            )
+          : validNumbers(
+              gs.flatMap((s) =>
+                s.responses.map((r) => normalizeToPercent(g, r.value))
+              )
+            );
+      out[g] = {
+        n: norm.length,
+        mean: mean(norm),
+        sd: sampleStd(norm),
+        variance: sampleVariance(norm),
+        iqr: iqr(norm),
+      };
+    }
+    return out;
+  }, [sessions, dMap]);
+
+  // 타당도: D(수동 코딩값)을 준거로 |평균A−D|·|평균B−D|·|평균C−D|.
+  // 전체(정규화 풀 평균 기준)와 문항별(정규화 셀 평균 기준) 두 관점으로 제시.
+  const validity = useMemo(() => {
+    if (!agg || !disc) return null;
+    const dOverall = disc.D.mean;
+    const scaleGroups: GroupKey[] = ["A", "B", "C"];
+
+    const overall = scaleGroups.map((g) => ({
+      group: g,
+      groupMean: disc[g].mean,
+      delta:
+        disc[g].mean != null && dOverall != null
+          ? Math.abs((disc[g].mean as number) - (dOverall as number))
+          : null,
+    }));
+    const ranked = overall
+      .filter((o) => o.delta != null)
+      .sort((a, b) => (a.delta as number) - (b.delta as number));
+    const closest = ranked.length ? ranked[0].group : null;
+
+    const perQuestion = QUESTIONS.map((q) => {
+      const dNorm = agg.cells[q.id].D.normMean;
+      const cols = scaleGroups.map((g) => {
+        const gn = agg.cells[q.id][g].normMean;
+        return gn != null && dNorm != null ? Math.abs(gn - dNorm) : null;
+      });
+      return { qid: q.id, construct: q.construct, dNorm, cols };
+    });
+
+    return { overall, closest, dOverall, perQuestion };
+  }, [agg, disc]);
+
   const handleCsv = () => {
     if (!sessions) return;
     downloadCsv("survey-study-data.csv", toCsv(sessions));
@@ -290,7 +381,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!authed) {
+  if (GATE_ENABLED && !authed) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-5 py-10">
         <div className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
@@ -700,9 +791,184 @@ export default function DashboardPage() {
         </Section>
       )}
 
+      {/* 변별력·타당도 종합 (D 준거) */}
+      {disc && validity && (
+        <Section
+          title="⑥ 변별력·타당도 종합 (D 준거)"
+          desc="변별력: 정규화(0~100)한 전체 응답의 퍼짐(표준편차·분산·IQR)이 클수록 응답이 잘 갈립니다. 타당도: D그룹(수동 코딩값)을 준거로, 각 척도의 평균이 준거에서 얼마나 벗어나는지(|평균−D|)를 봅니다. D는 '절대 정답'이 아니라 서술로부터 얻은 참고 준거입니다."
+        >
+          {/* 변별력 요약표 */}
+          <h3 className="mb-2 text-sm font-semibold text-slate-700">
+            변별력 — 그룹별 퍼짐(0~100 정규화)
+          </h3>
+          <div className="mb-6 overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                  <th className="py-2 pr-3">그룹</th>
+                  <th className="py-2 pr-3">n(응답)</th>
+                  <th className="py-2 pr-3">평균</th>
+                  <th className="py-2 pr-3">표준편차</th>
+                  <th className="py-2 pr-3">분산</th>
+                  <th className="py-2 pr-3">IQR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {GROUP_KEYS.map((g) => {
+                  const d = disc[g];
+                  return (
+                    <tr
+                      key={g}
+                      className="border-b border-slate-100 text-slate-700"
+                    >
+                      <td className="py-2 pr-3 font-medium">
+                        <span
+                          className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm align-middle"
+                          style={{ backgroundColor: GROUP_COLOR[g] }}
+                        />
+                        {g}
+                        {g === "D" && (
+                          <span className="ml-1 text-xs text-slate-400">
+                            (준거)
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">{d.n}</td>
+                      <td className="py-2 pr-3">{fmt(d.mean, 1)}</td>
+                      <td className="py-2 pr-3">{fmt(d.sd, 1)}</td>
+                      <td className="py-2 pr-3">{fmt(d.variance, 1)}</td>
+                      <td className="py-2 pr-3">{fmt(d.iqr, 1)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 타당도: 전체 준거 근접도 */}
+          <h3 className="mb-2 text-sm font-semibold text-slate-700">
+            타당도 — 준거(D) 근접도{" "}
+            <span className="font-normal text-slate-400">
+              (D 전체 평균 {fmt(validity.dOverall, 1)})
+            </span>
+          </h3>
+          {validity.dOverall == null ? (
+            <p className="mb-6 rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+              D그룹 서술 응답을 위 ⑤에서 수동 코딩하면 준거값이 산출되어
+              근접도가 계산됩니다.
+            </p>
+          ) : (
+            <div className="mb-6 overflow-x-auto">
+              <table className="w-full min-w-[480px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                    <th className="py-2 pr-3">척도</th>
+                    <th className="py-2 pr-3">평균(0~100)</th>
+                    <th className="py-2 pr-3">|평균 − D|</th>
+                    <th className="py-2 pr-3">판정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {validity.overall.map((o) => (
+                    <tr
+                      key={o.group}
+                      className="border-b border-slate-100 text-slate-700"
+                    >
+                      <td className="py-2 pr-3 font-medium">
+                        <span
+                          className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm align-middle"
+                          style={{ backgroundColor: GROUP_COLOR[o.group] }}
+                        />
+                        {o.group}
+                      </td>
+                      <td className="py-2 pr-3">{fmt(o.groupMean, 1)}</td>
+                      <td className="py-2 pr-3 font-semibold">
+                        {fmt(o.delta, 1)}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {validity.closest === o.group ? (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
+                            준거에 가장 근접
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* 타당도: 문항별 |평균−D| */}
+          <h3 className="mb-2 text-sm font-semibold text-slate-700">
+            문항별 |평균 − D| (0~100 정규화)
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                  <th className="py-2 pr-3">문항</th>
+                  <th className="py-2 pr-3">D 준거</th>
+                  <th className="py-2 pr-3">|A−D|</th>
+                  <th className="py-2 pr-3">|B−D|</th>
+                  <th className="py-2 pr-3">|C−D|</th>
+                </tr>
+              </thead>
+              <tbody>
+                {validity.perQuestion.map((row) => {
+                  // 이 문항에서 준거에 가장 가까운 척도(최소 delta) 강조
+                  const best = row.cols.reduce<{ idx: number; v: number } | null>(
+                    (acc, v, i) =>
+                      v == null
+                        ? acc
+                        : acc == null || v < acc.v
+                        ? { idx: i, v }
+                        : acc,
+                    null
+                  );
+                  return (
+                    <tr
+                      key={row.qid}
+                      className="border-b border-slate-100 text-slate-700"
+                    >
+                      <td className="py-2 pr-3">
+                        <span className="font-medium">Q{row.qid}</span>{" "}
+                        <span className="text-xs text-slate-400">
+                          {row.construct}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3">{fmt(row.dNorm, 1)}</td>
+                      {row.cols.map((v, i) => (
+                        <td
+                          key={i}
+                          className={`py-2 pr-3 ${
+                            best && best.idx === i
+                              ? "font-bold text-emerald-700"
+                              : ""
+                          }`}
+                        >
+                          {fmt(v, 1)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            각 문항 행에서 초록색은 그 문항에서 준거(D)에 가장 근접한 척도입니다.
+            D 준거는 수동 코딩된 서술 응답에서 산출되므로, 코딩이 진행될수록
+            값이 안정화됩니다.
+          </p>
+        </Section>
+      )}
+
       {/* 키워드 빈도 */}
       <Section
-        title="⑥ 이유·서술 텍스트 키워드 빈도"
+        title="⑦ 이유·서술 텍스트 키워드 빈도"
         desc="A/B/C 그룹의 '이유' 서술과 D그룹의 서술형 응답에서 자주 등장한 단어입니다. 정량(점수)과 정성(이유)을 비교하는 데 사용합니다."
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

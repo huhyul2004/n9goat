@@ -48,6 +48,28 @@ export function count(values: (number | null | undefined)[]): number {
   return validNumbers(values).length;
 }
 
+/** 분위수 (선형보간). q=0.25 → 1사분위, q=0.75 → 3사분위. n=0이면 null */
+export function quantile(
+  values: (number | null | undefined)[],
+  q: number
+): number | null {
+  const xs = validNumbers(values).sort((a, b) => a - b);
+  if (xs.length === 0) return null;
+  if (xs.length === 1) return xs[0];
+  const pos = (xs.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  const next = xs[base + 1];
+  return next === undefined ? xs[base] : xs[base] + rest * (next - xs[base]);
+}
+
+/** 사분위 범위(IQR) = Q3 − Q1. 변별력(퍼짐) 지표 */
+export function iqr(values: (number | null | undefined)[]): number | null {
+  const q1 = quantile(values, 0.25);
+  const q3 = quantile(values, 0.75);
+  return q1 === null || q3 === null ? null : q3 - q1;
+}
+
 /** 결측 비율(%) — 전체 시도 중 값이 없는 비율 */
 export function missingRate(
   values: (number | null | undefined)[]

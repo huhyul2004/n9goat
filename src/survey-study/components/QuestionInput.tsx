@@ -1,6 +1,6 @@
 "use client";
 
-import type { GroupConfig, Question, ScaleGroupKey } from "../lib/types";
+import type { SurveyItem } from "../lib/types";
 
 export interface AnswerDraft {
   value: number | null;
@@ -8,73 +8,66 @@ export interface AnswerDraft {
 }
 
 export default function QuestionInput({
-  group,
-  question,
+  item,
   answer,
   onChange,
 }: {
-  group: GroupConfig;
-  question: Question;
+  item: SurveyItem;
   answer: AnswerDraft;
   onChange: (a: AnswerDraft) => void;
 }) {
   const setValue = (value: number | null) => onChange({ ...answer, value });
   const setReason = (reason: string) => onChange({ ...answer, reason });
 
-  const text =
-    group.kind === "openText"
-      ? question.descriptive
-      : question.variants[group.key as ScaleGroupKey];
-
   return (
     <div className="space-y-6">
-      {/* 문항 텍스트 */}
+      {/* 문항 텍스트 (그룹에 맞게 서버가 이미 해석한 문장) */}
       <p className="text-lg font-semibold leading-relaxed text-slate-800">
-        {text}
+        {item.text}
       </p>
 
-      {/* 그룹별 응답 UI */}
-      {group.kind === "scale5" && (
+      {/* 입력 방식별 응답 UI */}
+      {item.kind === "scale5" && (
         <CircleScale
           min={1}
           max={5}
           value={answer.value}
           onPick={setValue}
-          pointLabels={group.pointLabels}
+          pointLabels={item.pointLabels}
         />
       )}
 
-      {group.kind === "scale4" && (
+      {item.kind === "scale4" && (
         <CircleScale
           min={1}
           max={4}
           value={answer.value}
           onPick={setValue}
-          pointLabels={group.pointLabels}
+          pointLabels={item.pointLabels}
         />
       )}
 
-      {group.kind === "slider100" && (
+      {item.kind === "slider100" && (
         <SliderScale
           value={answer.value}
           onPick={setValue}
-          leftLabel={group.leftLabel}
-          rightLabel={group.rightLabel}
+          leftLabel={item.leftLabel}
+          rightLabel={item.rightLabel}
         />
       )}
 
-      {group.kind === "openText" && (
+      {item.kind === "openText" && (
         <textarea
           value={answer.reason}
           onChange={(e) => setReason(e.target.value)}
           rows={6}
-          placeholder="자유롭게 적어 주세요."
+          placeholder="자유롭게 적어 주세요. 떠오르는 대로 문장으로 편하게 써 주시면 됩니다."
           className="w-full rounded-xl border border-slate-300 p-4 text-base leading-relaxed focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
         />
       )}
 
-      {/* 이유 서술 (A/B/C) */}
-      {group.askReason && (
+      {/* 이유 서술 (openText 가 아닌 입력 방식에서만) */}
+      {item.askReason && (
         <div className="pt-2">
           <label className="mb-2 block text-sm font-medium text-slate-600">
             왜 그렇게 생각하시는지 자유롭게 적어 주세요.{" "}
@@ -93,7 +86,7 @@ export default function QuestionInput({
   );
 }
 
-/** 원형 버튼 척도 (5점/4점 공용) — 각 선택지 아래 라벨 표시 */
+/** 원형 버튼 선택 UI (5개/4개 공용) — 각 선택지 아래 라벨 표시 */
 function CircleScale({
   min,
   max,
@@ -150,7 +143,7 @@ function CircleScale({
   );
 }
 
-/** 0~100 슬라이더 척도 */
+/** 연속 슬라이더 입력 (촘촘한 눈금·숫자 입력창 없이 매끄러운 드래그) */
 function SliderScale({
   value,
   onPick,
@@ -185,12 +178,12 @@ function SliderScale({
         className="w-full accent-indigo-600"
       />
       <div className="mt-2 flex items-center justify-between text-xs text-slate-500 sm:text-sm">
-        <span>{leftLabel} (0)</span>
-        <span>{rightLabel} (100)</span>
+        <span>{leftLabel}</span>
+        <span>{rightLabel}</span>
       </div>
       {!touched && (
         <p className="mt-2 text-center text-xs text-slate-400">
-          슬라이더를 움직여 답해 주세요.
+          막대를 움직여 답해 주세요.
         </p>
       )}
     </div>
